@@ -7,4 +7,9 @@ WORKDIR /app
 
 COPY app ./app
 
+# Pip but faster
+RUN pip install uv 
+
+RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
+
 CMD ["python", "./app/main.py"]

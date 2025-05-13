@@ -1,5 +1,8 @@
 mcp-agent
 asyncio
 # For the openalex server
-httpx 
+httpx
 mcp[cli]
+# API backend
+fastapi[standard]
+python-dotenv

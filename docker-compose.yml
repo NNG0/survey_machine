@@ -1,0 +1,42 @@
+services:
+  survey-machine:
+    image: survey-machine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: survey-machine-instance
+    hostname: survey-machine-instance
+    # ports:
+    #   - "8502:8502"
+    networks:
+      survey-machine:
+        # 10.89.0.2
+        ipv4_address: 10.89.0.2
+  ollama:
+    image: ollama/ollama
+    container_name: ollama-instance
+    hostname: ollama-instance
+    volumes:
+      - .ollama:/root/.ollama:ro # The .ollama directory is a symlink to the main ollama directory
+    networks:
+      survey-machine:
+        # 10.89.0.3
+        ipv4_address: 10.89.0.3
+    # Optional GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+# Necessary for the ollama container to work
+networks:
+  survey-machine:
+    driver: bridge
+    # network_backend: netavark
+    ipam:
+      config:
+        - subnet: 10.89.0.0/16
+          gateway: 10.89.0.1

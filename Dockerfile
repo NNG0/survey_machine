@@ -3,7 +3,7 @@ FROM python:3.13
 WORKDIR /app
 
 # Pip but faster
-RUN pip install uv 
+RUN pip install uv
 
 COPY app ./app
 

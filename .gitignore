@@ -5,3 +5,5 @@
 
 # Symlink to the ollama folder on the host machine
 .ollama
+
+.env

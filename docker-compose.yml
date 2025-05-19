@@ -30,6 +30,13 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
+  literature-access:
+    build:
+      context: .
+    container_name: literature_access
+    ports:
+      - "8000:8000"
+    command: fastapi run ./app/literature_access/main.py --port 8000
 
 # Necessary for the ollama container to work
 networks:

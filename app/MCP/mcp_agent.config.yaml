@@ -22,3 +22,8 @@ openai:
   base_url: "http://localhost:11434/v1"
   api_key: ollama
   default_nodel: qwen3
+
+ollama:
+  base_url: "http://localhost:11434/v1"
+  api_key: ollama
+  default_nodel: qwen3

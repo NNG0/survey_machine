@@ -9,4 +9,5 @@ COPY app ./app
 
 RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
 
-CMD ["uv", "run", "./app/MCP/main.py"]
+WORKDIR /app/app
+CMD ["uv", "run", "-m", "MCP.main"]

@@ -1,0 +1,4 @@
+*
+!.gitignore
+# Ignore all files in the traces directory except the .gitignore file
+# This allows the directory to be tracked in Git while ignoring all other files.

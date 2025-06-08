@@ -2,6 +2,8 @@ import asyncio
 import time
 from typing import Awaitable, Callable, Literal, Optional, TypeVar
 
+import httpx
+
 from mcp_agent.app import MCPApp
 from mcp_agent.config import LoggerSettings, Settings, MCPSettings, MCPServerSettings, OpenAISettings
 from mcp_agent.agents.agent import Agent
@@ -27,7 +29,7 @@ mcp_settings = MCPSettings(
             command="uvx",
             args=["mcp-server-fetch"],
         ),
-        "googleScholar" : MCPServerSettings( 
+        "google_scholar" : MCPServerSettings( 
             command="uvx",
             args=["google-scholar-mcp-server"],
         ),
@@ -40,8 +42,9 @@ openai_settings = OpenAISettings(
     api_key="ollama",
     # The setting of the model using kwargs isn't documented, but it works.
     # default_model="qwen3", # 8b Model
-    default_model="qwen3:4b", # My memory isn't large enough for 8b, sorry :(
+    default_model="qwen3:0.6b", # My memory isn't large enough for 8b, sorry :(
     # default_model="llama3.2", # Trying out a non-reasoning model
+    http_client=httpx.Client(timeout=30.0)
 )
 
 logger = LoggerSettings(

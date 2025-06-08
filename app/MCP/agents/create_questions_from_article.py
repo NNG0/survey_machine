@@ -7,12 +7,20 @@ async def run_create_questions_from_article_agent(article: Article, research_que
     They are supposed to be open-ended and not correctly formatted yet. 
     """
 
-    prompt = f"""You are a professional research assistant. There will be a survey about the aricle you will recieve.
-Based on the content of the article, create a list of questions that, when answered in the survey, will help answer the question.
-Return the questions in a list format.
-Research question: {research_question}.
-Article: {article.title} by {article.author}
-Abstract: {article.abstract}""" # TODO: Here, both few-shot and RAG should be used.
+    prompt = f"""Create survey questions about this research topic.
+
+                RESEARCH TOPIC: {research_question}
+
+                ARTICLE INFO:
+                Title: {article.title}
+                Author: {article.author}  
+                Abstract: {article.abstract}
+
+                Create exactly 3 survey questions. Output format:
+                ["Question 1", "Question 2", "Question 3"]
+
+                Questions:"""
+    # TODO: Here, both few-shot and RAG should be used.
     return await run_basic_ollama_agent(
         name="create_questions_from_article_agent",
         prompt=prompt,

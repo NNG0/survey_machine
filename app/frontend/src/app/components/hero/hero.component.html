@@ -1,0 +1,18 @@
+<div class="hero">
+  <h1>Intelligente Literaturrecherche mit KI</h1>
+  <p>Geben Sie Ihre Forschungsfrage oder ein Thema ein und unsere KI findet die relevantesten wissenschaftlichen Publikationen für Sie.</p>
+  <div class="search-container">
+    <input 
+      type="text" 
+      [(ngModel)]="searchQuery" 
+      placeholder="z.B. 'Auswirkungen des Klimawandels auf Meeresökosysteme'"
+      (keyup.enter)="onSearch()"
+    />
+    <button (click)="onSearch()">Suchen</button>
+  </div>
+  <p class="examples">
+    Beispiele: 
+    <a href="#" (click)="$event.preventDefault(); searchQuery='Nachhaltige Energiequellen'; onSearch()">Nachhaltige Energiequellen</a>, 
+    <a href="#" (click)="$event.preventDefault(); searchQuery='KI in der Medizin'; onSearch()">KI in der Medizin</a>
+  </p>
+</div>

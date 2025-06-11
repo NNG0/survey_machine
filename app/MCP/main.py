@@ -1,27 +1,31 @@
 import asyncio
 import time
-from typing import Awaitable, Callable, Literal, Optional, TypeVar
+from typing import Awaitable, Callable, TypeVar
 
 import httpx
 
 from mcp_agent.app import MCPApp
-from mcp_agent.config import LoggerSettings, Settings, MCPSettings, MCPServerSettings, OpenAISettings
-from mcp_agent.agents.agent import Agent
-from mcp_agent.workflows.llm.augmented_llm import RequestParams
-from mcp_agent.workflows.llm.augmented_llm_ollama import OllamaAugmentedLLM
-from mcp_agent.logging.logger import Logger
+from mcp_agent.config import (
+    LoggerSettings,
+    Settings,
+    MCPSettings,
+    MCPServerSettings,
+    OpenAISettings,
+)
 
-from pydantic import BaseModel
 
 from MCP.agents.check_literature_relevance import run_check_literature_relevance_agent
 from MCP.agents.check_question_relevance import run_check_question_relevance_agent
-from MCP.agents.create_questions_from_article import run_create_questions_from_article_agent
+from MCP.agents.create_questions_from_article import (
+    run_create_questions_from_article_agent,
+)
 from MCP.agents.create_survey_question import run_create_survey_question_agent
 from MCP.agents.relevant_literature import run_relevant_literature_agent
 
-from MCP.types import RequestStatus
+from MCP.types import RequestStages, RequestStatus
+from MCP.steps import next_step, run_single_stage
 
-# The mcp_agent.config.yaml file is not working correctly for whatever reason, so instead, it's getting coded here. 
+# The mcp_agent.config.yaml file is not working correctly for whatever reason, so instead, it's getting coded here.
 
 mcp_settings = MCPSettings(
     servers={
@@ -29,7 +33,7 @@ mcp_settings = MCPSettings(
             command="uvx",
             args=["mcp-server-fetch"],
         ),
-        "google_scholar" : MCPServerSettings( 
+        "google_scholar": MCPServerSettings(
             command="uvx",
             args=["google-scholar-mcp-server"],
         ),
@@ -38,13 +42,13 @@ mcp_settings = MCPSettings(
 
 openai_settings = OpenAISettings(
     # base_url="http://10.89.0.3:11434/v1", # The ollama virtual machine
-    base_url="http://host.docker.internal:11434/v1", # The local ollama server (native is faster on my machine)
+    base_url="http://host.docker.internal:11434/v1",  # The local ollama server (native is faster on my machine)
     api_key="ollama",
     # The setting of the model using kwargs isn't documented, but it works.
     # default_model="qwen3", # 8b Model
-    default_model="qwen3:0.6b", # My memory isn't large enough for 8b, sorry :(
+    default_model="qwen3:0.6b",  # My memory isn't large enough for 8b, sorry :(
     # default_model="llama3.2", # Trying out a non-reasoning model
-    http_client=httpx.Client(timeout=30.0)
+    http_client=httpx.Client(timeout=30.0),
 )
 
 logger = LoggerSettings(
@@ -54,27 +58,31 @@ logger = LoggerSettings(
 
 # time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running
 
-app = MCPApp(name="hello_world_agent", settings= Settings(mcp=mcp_settings, openai=openai_settings, logger=logger), human_input_callback=None)
+app = MCPApp(
+    name="hello_world_agent",
+    settings=Settings(mcp=mcp_settings, openai=openai_settings, logger=logger),
+    human_input_callback=None,
+)
 
 # Drafting the structure:
-# Each agent is modeled as a function that takes in a request and returns a response. 
+# Each agent is modeled as a function that takes in a request and returns a response.
 # That way we can limit the capabilities of the agent to only what is needed.
 
 
-# The first agent needs to take in the research question for the survey and make a plan for what to do. 
+# The first agent needs to take in the research question for the survey and make a plan for what to do.
 
 
-# The literature agent needs to 
+# The literature agent needs to
 
-# The output agents need to work tegether to create the final latex product. 
-# Let's assume they at the very end recieve a list of questions and the type of answer the questioned person can give. 
+# The output agents need to work tegether to create the final latex product.
+# Let's assume they at the very end recieve a list of questions and the type of answer the questioned person can give.
 
 
 # TODO: Add agent that checks whether the research question is valid and if it can be answered with the given literature.
 # TODO: Add agent that checks whether the research question is ethical.
 
 
-# TODO: Maybe create an agent that can work on the questions. 
+# TODO: Maybe create an agent that can work on the questions.
 
 # TODO: Do we use additional memory for the agents?
 
@@ -83,7 +91,11 @@ app = MCPApp(name="hello_world_agent", settings= Settings(mcp=mcp_settings, open
 
 
 T = TypeVar("T")
-async def try_run_agent(agent_func: Callable[..., Awaitable[T]], num_tries = 3, *args, **kwargs) -> T | None:
+
+
+async def try_run_agent(
+    agent_func: Callable[..., Awaitable[T]], num_tries=3, *args, **kwargs
+) -> T | None:
     """This function tries to run an agent function a number of times and returns the result if successful.
     If it fails, it returns None.
     """
@@ -95,40 +107,44 @@ async def try_run_agent(agent_func: Callable[..., Awaitable[T]], num_tries = 3, 
             print(f"Error in try_run_agent: {e}")
             time.sleep(1)
         else:
-            break # Breaking is a fucking exception in Python, so we need the try-except-else block; breaking inside the try block will not work.
+            break  # Breaking is a fucking exception in Python, so we need the try-except-else block; breaking inside the try block will not work.
 
     return result
+
 
 paper_relevance_threshold = 0.5
 question_relevance_threshold = 0.5
 
-async def main_loop(research_question: str):
-    """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
-    """
 
+async def old_main_loop(research_question: str):
+    """This is the main loop of a request. It takes in the research question and does all the steps to create the survey."""
 
     # Initializing the app
     async with app.run() as mcp_agent_app:
-
-
         logger = mcp_agent_app.logger
         logger.info("Starting main loop")
 
         # The state is an object of type RequestStatus.
-        status = RequestStatus(trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt") # The trace file is named with the current timestamp, so it is unique.
+        status = RequestStatus(
+            research_question,
+            2,  # For testing, we limit the number of papers to 2.
+            trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt",
+        )  # The trace file is named with the current timestamp, so it is unique.
 
         # First set the papers.
         papers = await try_run_agent(
             run_relevant_literature_agent,
             research_question=research_question,
-            paper_limit=2, # Just for testing, we limit the number of papers to 2.
+            paper_limit=2,  # Just for testing, we limit the number of papers to 2.
         )
 
         if papers is None:
             print("No relevant papers found, exiting.")
             return None
-        
-        status.papers = [(paper, None) for paper in papers] # The relevance score is not known yet, so we set it to None.
+
+        status.papers = [
+            (paper, None) for paper in papers
+        ]  # The relevance score is not known yet, so we set it to None.
 
         # Check their relevance
         for paper in papers:
@@ -142,9 +158,13 @@ async def main_loop(research_question: str):
             else:
                 print(f"Error checking relevance of paper {paper.title}, skipping.")
                 continue
-        
+
         # Now we have a list of papers and their relevance scores. Let's filter them.
-        status.papers = [paper for paper in status.papers if paper[1] is not None and paper[1] >= paper_relevance_threshold] # Unscoreable papers are not included in the list.
+        status.papers = [
+            paper
+            for paper in status.papers
+            if paper[1] is not None and paper[1] >= paper_relevance_threshold
+        ]  # Unscoreable papers are not included in the list.
         if len(status.papers) == 0:
             print("No relevant papers found, exiting.")
             return None
@@ -159,7 +179,9 @@ async def main_loop(research_question: str):
                 research_question=research_question,
             )
             if questions is None:
-                print(f"Error creating questions from paper {paper[0].title}, skipping.")
+                print(
+                    f"Error creating questions from paper {paper[0].title}, skipping."
+                )
                 continue
 
             # Check the relevance of the questions
@@ -183,16 +205,59 @@ async def main_loop(research_question: str):
                 else:
                     print(f"Error checking relevance of question {question}, skipping.")
                     continue
-            
-            # Now we have a list of questions and their relevance scores. Let's filter them.
-        status.questions = [question for question in status.questions if question[1] is not None and question[1] > question_relevance_threshold]
 
+            # Now we have a list of questions and their relevance scores. Let's filter them.
+        status.questions = [
+            question
+            for question in status.questions
+            if question[1] is not None and question[1] > question_relevance_threshold
+        ]
 
         # Done for now!
         print(f"Relevant questions: {status.questions}")
         return status
 
 
+async def main_loop(research_question: str):
+    """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
+    This time, it uses the stepping system to run the agents."""
+
+    # Initializing the app
+    async with app.run() as mcp_agent_app:
+        logger = mcp_agent_app.logger
+        logger.info("Starting main loop")
+
+        # The state is an object of type RequestStatus.
+        status = RequestStatus(
+            research_question,
+            2,  # For testing, we limit the number of papers to 2.
+            trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt",
+        )  # The trace file is named with the current timestamp, so it is unique.
+
+        stage = next_step(status)
+        while stage is not None and stage[3] != RequestStages.FINISHED:
+            print(
+                stage[0]
+            )  # The first element is a human-readable string describing the step.
+            # Run a single stage of the request.
+            status, step_info = await run_single_stage(status)
+            logger.debug(f"Finished stage: {stage[3]}")
+            logger.debug(f"Current status: {status}")
+            step_info.print_warnings_and_errors()
+            # DEBUG
+            print(f"Current status: {status}")
+
+            # Lastly, update the stage to the next step.
+            stage = next_step(status)
+
+            # We could also run a single step instead.
+
+        # Result:
+        print(f"Relevant questions: {status.questions}")
+        if stage is None or stage[3] == RequestStages.FINISHED:
+            print("All stages finished successfully.")
+        else:
+            print(f"Last stage: {stage[3]}")
 
 
 if __name__ == "__main__":

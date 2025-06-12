@@ -77,6 +77,13 @@ async def run_single_create_questions_from_article_agent(
         )
         return request_status, step_info
 
+    # Asyncio library exception handling:
+    if isinstance(questions, Exception):
+        step_info.add_error(
+            f"Error creating questions from article {article.title}: {questions}"
+        )
+        return request_status, step_info
+
     if len(questions) != questions_per_article:
         step_info.add_warning(
             f"Article {article.title} returned {len(questions)} questions, "
@@ -127,6 +134,13 @@ async def run_all_create_questions_from_article_agent(
                 f"Error creating questions from article {article.title}, skipping."
             )
             continue
+
+        # The asyncio library represents exceptions in coroutines as the result of the awaiting, so we need to maybe bubble that up.
+        if isinstance(questions, Exception):
+            step_info.add_error(
+                f"Error creating questions from article {article.title}: {questions}"
+            )
+            continue  # Try the next article.
 
         if len(questions) != request_status.settings.question_per_article:
             step_info.add_warning(

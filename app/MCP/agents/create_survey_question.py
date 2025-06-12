@@ -11,6 +11,10 @@ async def run_create_survey_question_agent(
     prompt = f"""
 You are a professional research assistant. You will be creating a survey for a research question.
 Given a question, you need to think ybout how it will be answered and output correctly formatted survey question.
+The question should either be a text field, multiple choice, yes/no or a range question.
+The options should be set accordingly. 
+For example, if the question has a range answer, the options should be a tuple of two integers representing the minimum and maximum values.
+And if the question is a multiple choice question, the options should be a list of strings representing the possible answers.
 
 Research question: {research_question}
 Question: {question}"""
@@ -41,9 +45,18 @@ async def run_single_create_survey_question_agent(
             formatted_question = await run_create_survey_question_agent(
                 question.question, request_status.settings.research_question
             )
-            if formatted_question is not None:
+
+            # Asyncio library exception handling
+            if formatted_question is not None and isinstance(
+                formatted_question, SurveyQuestion
+            ):
                 to_change = (i, formatted_question)
                 break  # We found a question to change, so we can break the loop.
+            elif isinstance(formatted_question, Exception):
+                step_info.add_error(
+                    f"Error formatting question {question.question}: {formatted_question}"
+                )
+                continue  # Skip to the next question if there was an error.
             else:
                 step_info.add_error(
                     f"Error formatting question {question.question}, skipping."
@@ -87,6 +100,13 @@ async def run_all_create_survey_questions_agent(
         if formatted_question is None:
             step_info.add_error(
                 f"Error formatting question {question.question}, skipping."
+            )
+            continue
+
+        # Asyncio library exception handling
+        if isinstance(formatted_question, Exception):
+            step_info.add_error(
+                f"Error formatting question {question.question}: {formatted_question}"
             )
             continue
 

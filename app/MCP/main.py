@@ -53,7 +53,8 @@ openai_settings = OpenAISettings(
 
 logger = LoggerSettings(
     # level="debug",
-    level="info",
+    # level="info",
+    level="warning",  # Set to warning to avoid too much output
 )
 
 # time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running

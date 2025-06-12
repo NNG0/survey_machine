@@ -46,9 +46,14 @@ async def run_single_check_literature_relevance_agent(
             relevance = await run_check_literature_relevance_agent(
                 article, request_status.settings.research_question
             )
-            if relevance is not None:
+            if relevance is not None and isinstance(relevance, float):
                 to_change = (i, relevance)
                 break  # We found an article to change, so we can break the loop.
+            elif isinstance(relevance, Exception):
+                step_info.add_error(
+                    f"Error checking relevance of paper {article.title}: {relevance}"
+                )
+                continue
             else:
                 step_info.add_error(
                     f"Error checking relevance of paper {article.title}, skipping."
@@ -80,8 +85,13 @@ async def run_all_check_literature_relevance_agent(
             relevance = await run_check_literature_relevance_agent(
                 article, request_status.settings.research_question
             )
-            if relevance is not None:
+            if relevance is not None and isinstance(relevance, float):
                 to_change.append((i, relevance))
+            elif isinstance(relevance, Exception):
+                step_info.add_error(
+                    f"Error checking relevance of paper {article.title}: {relevance}"
+                )
+                continue
             else:
                 step_info.add_error(
                     f"Error checking relevance of paper {article.title}, skipping."

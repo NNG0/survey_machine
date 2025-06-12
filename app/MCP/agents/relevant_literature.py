@@ -41,8 +41,10 @@ async def run_single_relevant_literature_agent(
         request_status.settings.research_question, request_status.settings.paper_limit
     )
 
-    if articles is not None:
+    if articles is not None and isinstance(articles, list):
         request_status.papers = [(article, None) for article in articles]
+    elif isinstance(articles, Exception):
+        step_info.add_error(f"Error finding relevant literature: {articles}")
     else:
         step_info.add_error("Error finding relevant literature.")
 

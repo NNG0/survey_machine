@@ -75,10 +75,7 @@ class RequestStatus(BaseModel):
             research_question=research_question, paper_limit=paper_limit or 5
         )
         super().__init__(
-            papers=[],
-            questions=[],
-            settings=settings,
-            trace_file=trace_file
+            papers=[], questions=[], settings=settings, trace_file=trace_file
         )
 
     def pretty_print(self):
@@ -94,8 +91,12 @@ class RequestStatus(BaseModel):
 class StepInformation(BaseModel):
     """This class is used to store information about what went wrong in a step of the agent workflow."""
 
-    warnings: list[str] = Field(default_factory=list)  # Warnings that were raised during the step.
-    errors: list[str] = Field(default_factory=list)  # Errors that were raised during the step.
+    warnings: list[str] = Field(
+        default_factory=list
+    )  # Warnings that were raised during the step.
+    errors: list[str] = Field(
+        default_factory=list
+    )  # Errors that were raised during the step.
 
     def add_warning(self, warning: str):
         """Adds a warning to the step information."""

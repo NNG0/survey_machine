@@ -26,10 +26,11 @@ export class AppComponent {
   showResults = false;
   showTopics = false;
 
-  onSearch(query: string) {
+  onSearch(searchData: {query: string, filters: any}) {
     this.showResults = true;
     this.showTopics = true;
     // Here you would typically make an API call to get the search results
-    console.log('Search query:', query);
+    console.log('Search query:', searchData.query);
+    console.log('Search filters:', searchData.filters);
   }
 }

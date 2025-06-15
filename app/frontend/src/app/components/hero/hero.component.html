@@ -1,18 +1,147 @@
 <div class="hero">
-  <h1>Intelligente Literaturrecherche mit KI</h1>
-  <p>Geben Sie Ihre Forschungsfrage oder ein Thema ein und unsere KI findet die relevantesten wissenschaftlichen Publikationen für Sie.</p>
+  <h1>Intelligent Literature Research with AI</h1>
+  <p>Enter your research question or topic, and our AI will find the most relevant scientific publications for you.</p>
   <div class="search-container">
-    <input 
-      type="text" 
-      [(ngModel)]="searchQuery" 
-      placeholder="z.B. 'Auswirkungen des Klimawandels auf Meeresökosysteme'"
-      (keyup.enter)="onSearch()"
-    />
-    <button (click)="onSearch()">Suchen</button>
+    <div class="search-bar">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        placeholder="Your survey question"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+
+    <div class="filter-panel" *ngIf="showFilters">
+      <div class="filter-section">
+        <h4>Publication Year</h4>
+        <div class="year-range">
+          <input 
+            type="number" 
+            [(ngModel)]="filters.yearFrom" 
+            placeholder="From"
+            min="1900"
+            max="2024"
+          />
+          <span>to</span>
+          <input 
+            type="number" 
+            [(ngModel)]="filters.yearTo" 
+            placeholder="To"
+            min="1900"
+            max="2024"
+          />
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Citations</h4>
+        <input 
+          type="number" 
+          [(ngModel)]="filters.minCitations" 
+          placeholder="Minimum number of citations"
+          min="0"
+        />
+      </div>
+
+      <div class="filter-section search-terms-section">
+        <h4>Title Search Terms</h4>
+        <div class="search-terms-container">
+          <div class="search-term-group" *ngFor="let term of filters.titleTerms; let i = index">
+            <div class="search-term-input">
+              <input 
+                type="text" 
+                [(ngModel)]="term.text" 
+                placeholder="Search term for title"
+              />
+              <button 
+                class="remove-term" 
+                (click)="removeSearchTerm('title', i)"
+                *ngIf="filters.titleTerms.length > 1"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <label class="or-toggle">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="term.useOrOperator"
+              />
+              may contain
+            </label>
+          </div>
+          <button class="add-term-btn" (click)="addSearchTerm('title')">
+            <i class="fas fa-plus"></i> Add Title Search Term
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-section search-terms-section">
+        <h4>Abstract Search Terms</h4>
+        <div class="search-terms-container">
+          <div class="search-term-group" *ngFor="let term of filters.abstractTerms; let i = index">
+            <div class="search-term-input">
+              <input 
+                type="text" 
+                [(ngModel)]="term.text" 
+                placeholder="Search term for abstract"
+              />
+              <button 
+                class="remove-term" 
+                (click)="removeSearchTerm('abstract', i)"
+                *ngIf="filters.abstractTerms.length > 1"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <label class="or-toggle">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="term.useOrOperator"
+              />
+              may contain
+            </label>
+          </div>
+          <button class="add-term-btn" (click)="addSearchTerm('abstract')">
+            <i class="fas fa-plus"></i> Add Abstract Search Term
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h4>Semantic Search</h4>
+        <label class="semantic-toggle">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="filters.useSemanticSearch"
+          />
+          Enable semantic search
+        </label>
+      </div>
+
+      <div class="filter-section">
+        <h4>Subject Area</h4>
+        <input 
+          type="text" 
+          [(ngModel)]="filters.subject" 
+          placeholder="Subject area (semantic search)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+      </div>
+    </div>
+
+    <div class="search-actions">
+      <button class="filter-toggle" (click)="toggleFilters()">
+        <i class="fas fa-filter"></i> Filters
+      </button>
+      <button class="search-btn" (click)="onSearch()">Search</button>
+    </div>
   </div>
   <p class="examples">
-    Beispiele: 
-    <a href="#" (click)="$event.preventDefault(); searchQuery='Nachhaltige Energiequellen'; onSearch()">Nachhaltige Energiequellen</a>, 
-    <a href="#" (click)="$event.preventDefault(); searchQuery='KI in der Medizin'; onSearch()">KI in der Medizin</a>
+    Examples: 
+    <a href="#" (click)="$event.preventDefault(); searchQuery='Sustainable Energy Sources'; onSearch()">Sustainable Energy Sources</a>, 
+    <a href="#" (click)="$event.preventDefault(); searchQuery='AI in Medicine'; onSearch()">AI in Medicine</a>
   </p>
 </div>

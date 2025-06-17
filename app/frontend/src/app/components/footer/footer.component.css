@@ -1,0 +1,39 @@
+.footer {
+  background-color: #1c1c2e;
+  color: white;
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.footer-section {
+  flex: 1;
+  min-width: 200px;
+  margin: 0 20px;
+}
+
+.footer-section h4 {
+  margin: 0 0 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.footer-section p {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+.footer-section a {
+  color: white;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.footer-section a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}

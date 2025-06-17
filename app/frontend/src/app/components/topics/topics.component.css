@@ -1,0 +1,17 @@
+.topics {
+  flex: 1;
+  padding: 20px;
+}
+
+.topics h3 {
+  margin: 0 0 20px;
+  color: #222;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.cluster-graph {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}

@@ -1,0 +1,33 @@
+<div class="results" *ngIf="showResults">
+  <div class="card" *ngFor="let result of [exampleResult]">
+    <div class="result-header">
+      <div class="result-title">
+        <h3>{{ result.title }}</h3>
+        <p class="meta">
+          <i class="fas fa-file-alt"></i> {{ result.authors }} • {{ result.year }} • {{ result.journal }}
+        </p>
+      </div>
+      <span class="relevance" title="Dieser Score basiert auf der semantischen Nähe der Inhalte zur gestellten Forschungsfrage.">
+        {{ result.relevance }}% relevant
+      </span>
+    </div>
+
+    <p class="abstract">{{ result.abstract }}</p>
+
+    <div class="tags">
+      <span *ngFor="let tag of result.tags">{{ tag }}</span>
+    </div>
+
+    <div class="citation">
+      <strong><i class="fas fa-quote-right"></i> Zitation:</strong><br />
+      {{ result.citation }}
+      <a [href]="result.doi" target="_blank">{{ result.doi }}</a>
+    </div>
+
+    <div class="actions">
+      <a href="#" class="save-link">
+        <i class="fas fa-bookmark"></i> Speichern
+      </a>
+    </div>
+  </div>
+</div>

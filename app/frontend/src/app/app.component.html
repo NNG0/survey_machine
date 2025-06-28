@@ -1,0 +1,16 @@
+<!-- Main application container -->
+<div class="app-container">
+  <app-header></app-header>
+  
+  <app-hero (search)="onSearch($event)"></app-hero>
+  
+  <div class="content-section" *ngIf="showResults">
+    <app-results [showResults]="showResults"></app-results>
+    <app-topics [showTopics]="showTopics"></app-topics>
+  </div>
+  
+  <app-footer></app-footer>
+</div>
+
+<!-- Router outlet for future routing -->
+<router-outlet />

@@ -1,0 +1,107 @@
+.results {
+  flex: 1;
+  padding: 20px;
+}
+
+.card {
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 20px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.result-title {
+  max-width: 85%;
+}
+
+.result-title h3 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.meta {
+  margin: 0;
+  color: #666;
+  font-size: 0.95em;
+}
+
+.meta i {
+  margin-right: 6px;
+}
+
+.relevance {
+  background-color: #eef0ff;
+  color: #3f51b5;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 500;
+  cursor: help;
+}
+
+.abstract {
+  margin: 16px 0;
+  color: #333;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.tags {
+  margin: 16px 0;
+}
+
+.tags span {
+  background-color: #f0f1ff;
+  color: #3f51b5;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  margin: 4px;
+  display: inline-block;
+  transition: background-color 0.2s;
+}
+
+.tags span:hover {
+  background-color: #dfe0ff;
+}
+
+.citation {
+  background-color: #f8f9fc;
+  padding: 16px;
+  border-left: 4px solid #3f51b5;
+  border-radius: 8px;
+  font-size: 0.9em;
+  margin-top: 16px;
+}
+
+.citation a {
+  color: #3f51b5;
+  text-decoration: underline;
+}
+
+.actions {
+  text-align: right;
+  margin-top: 12px;
+}
+
+.save-link {
+  color: #3f51b5;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.save-link:hover {
+  text-decoration: underline;
+}

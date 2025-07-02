@@ -2,24 +2,90 @@ from typing import Optional
 from .base import run_basic_ollama_agent
 from MCP.types import Article, RequestStatus, StepInformation
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from literature_db_access.open_alex_client import run_enhanced_openalex_search
 
-async def run_relevant_literature_agent(
-    research_question: str, paper_limit: int
-) -> Optional[list[Article]]:
-    """This agent receives the research question and returns a list of relevant literature in the proper format."""
 
+
+async def generate_similar_research_questions(original_question: str, num_variations: int = 4) -> list[str]:
+    """Generate similar research questions + keep the original"""
+    
     prompt = f"""
-    You are a research assistant. Given a research question, you need to find relevant literature.
-    You have access to Google Scholar to look up papers. For the research question, find the most relevant papers and return a list of articles with their title, abstract, author and URL.
-    Limit the number of articles to {paper_limit}.
-    research question: {research_question}"""  # TODO: Add examples on how to do this, multi-shot learning is important
+    SYSTEM:
+    You are a research assistant. Paraphrase research questions.
 
-    return await run_basic_ollama_agent(
-        name="relevant_literature_agent",
-        prompt=prompt,
-        server_list=["google_scholar"],
-        output_type=list[Article],
-    )
+    USER:
+    Paraphrase the following research question into exactly {num_variations} different variations.
+    Guidelines:
+    - Keep the core meaning and research focus
+    - 10–20 words each
+    - Use synonyms and different sentence structures
+    - English language
+    - Return only a JSON array, no markdown, no commentary
+
+    Original:
+    ```{original_question}```
+
+    Few-shot example:
+    Original: "How does remote work affect productivity?"
+    Answer: ["What is the impact of telecommuting on employee performance?",
+            "Does working from home influence organizational efficiency?",
+            "Remote work effects on workplace productivity metrics",
+            "Telework and its relationship to professional output"]
+    """
+    
+    try:
+        variations = await run_basic_ollama_agent(
+            name="question_generator",
+            prompt=prompt,
+            server_list=[],
+            output_type=list[str]
+        )
+        
+        if variations and len(variations) >= num_variations:
+            all_questions = [original_question] + variations[:num_variations]
+            
+            # Display generated questions
+            print(f"\n Generated {len(all_questions)} research question variations:")
+            for i, question in enumerate(all_questions, 1):
+                print(f"  {i}. {question}")
+            print()
+            
+            return all_questions
+        else:
+            return [original_question]
+            
+    except Exception as e:
+        print(f"Error generating questions: {e}")
+        return [original_question]
+
+
+async def run_relevant_literature_agent(research_question: str, paper_limit: int) -> Optional[list[Article]]:
+    """Literature search using direct OpenAlex API instead of Google Scholar MCP"""
+    
+    print(f"Using OpenAlex API for literature search: {research_question}")
+    
+    # Generate query variations
+    variations = await generate_similar_research_questions(research_question)
+    
+    # Prepare all queries (original + variations) 
+    all_queries = variations  # generate_similar_research_questions returns original + variations
+    
+    try:
+        articles = await run_enhanced_openalex_search(
+            research_question=research_question,
+            paper_limit=paper_limit,
+            email=None
+        )
+        
+        print(f"OpenAlex search complete: {len(articles) if articles else 0} articles found")
+        return articles if articles else None
+        
+    except Exception as e:
+        print(f"Error with OpenAlex client: {e}")
+        return None
 
 
 async def run_single_relevant_literature_agent(

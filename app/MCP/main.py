@@ -1,3 +1,21 @@
+import os
+import warnings
+import logging
+
+# OpenTelemetry komplett deaktivieren
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["OTEL_TRACES_EXPORTER"] = "none"
+os.environ["OTEL_METRICS_EXPORTER"] = "none" 
+os.environ["OTEL_LOGS_EXPORTER"] = "none"
+
+# Logging stumm schalten
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("requests").setLevel(logging.CRITICAL) 
+logging.getLogger("opentelemetry").setLevel(logging.CRITICAL)
+
+# Warnings unterdrücken
+warnings.filterwarnings("ignore", message=".*Connection refused.*")
+
 import asyncio
 import time
 from typing import Awaitable, Callable, TypeVar
@@ -21,9 +39,11 @@ from MCP.agents.create_questions_from_article import (
 )
 from MCP.agents.create_survey_question import run_create_survey_question_agent
 from MCP.agents.relevant_literature import run_relevant_literature_agent
+from MCP.agents.relevance_score import run_embedding_relevance_agent
+from MCP.agents.bertopic_clustering import run_bertopic_clustering_agent
 
 from MCP.types import RequestStages, RequestStatus
-from MCP.steps import next_step, run_single_stage
+from MCP.steps import next_step, run_single_stage, run_single_next_step
 
 # The mcp_agent.config.yaml file is not working correctly for whatever reason, so instead, it's getting coded here.
 
@@ -219,6 +239,7 @@ async def old_main_loop(research_question: str):
         return status
 
 
+
 async def main_loop(research_question: str):
     """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
     This time, it uses the stepping system to run the agents."""
@@ -231,7 +252,7 @@ async def main_loop(research_question: str):
         # The state is an object of type RequestStatus.
         status = RequestStatus(
             research_question,
-            2,  # For testing, we limit the number of papers to 2.
+            80,  # Increased from 2 for better results
             trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt",
         )  # The trace file is named with the current timestamp, so it is unique.
 
@@ -240,18 +261,44 @@ async def main_loop(research_question: str):
             print(
                 stage[0]
             )  # The first element is a human-readable string describing the step.
+            
             # Run a single stage of the request.
             status, step_info = await run_single_stage(status)
+            
+            # After literature search, add SciBERT relevance scoring and BERTopic clustering
+            if stage[3] == RequestStages.FINDING_LITERATURE and status.papers:
+                print("Running SciBERT relevance scoring...")
+                articles = [article for article, _ in status.papers]
+                scored_articles = await run_embedding_relevance_agent(
+                    research_question, articles, top_k=len(articles)
+                )
+                status.papers = scored_articles
+                
+                print("Running BERTopic clustering...")
+                articles_only = [article for article, score in scored_articles]
+                clustered_papers = await run_bertopic_clustering_agent(
+                    research_question, 
+                    articles_only,
+                    n_topics=min(5, len(articles_only) // 10)  # Dynamic topic count
+                )
+                
+                # Print clustering summary
+                topics = {}
+                for article, topic_id, topic_label in clustered_papers:
+                    if topic_label not in topics:
+                        topics[topic_label] = 0
+                    topics[topic_label] += 1
+                
+                print(f"Topic clustering results:")
+                for topic_label, count in topics.items():
+                    print(f"  {topic_label}: {count} papers")
+            
             logger.debug(f"Finished stage: {stage[3]}")
             logger.debug(f"Current status: {status}")
             step_info.print_warnings_and_errors()
-            # DEBUG
-            print(f"Current status: {status}")
-
+            
             # Lastly, update the stage to the next step.
             stage = next_step(status)
-
-            # We could also run a single step instead.
 
         # Result:
         print(f"Relevant questions: {status.questions}")

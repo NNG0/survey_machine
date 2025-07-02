@@ -12,6 +12,12 @@ services:
       survey-machine:
         # 10.89.0.2
         ipv4_address: 10.89.0.2
+    volumes:
+      - ./app:/app/app 
+      - huggingface_cache:/root/.cache/huggingface
+    command: sleep infinity  
+    environment:
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
   ollama:
     image: ollama/ollama
     container_name: ollama-instance
@@ -47,3 +53,5 @@ networks:
       config:
         - subnet: 10.89.0.0/16
           gateway: 10.89.0.1
+volumes:
+  huggingface_cache:

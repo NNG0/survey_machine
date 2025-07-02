@@ -1,6 +1,7 @@
 from typing import Optional
 from .base import run_basic_ollama_agent
 from MCP.types import Article, RequestStatus, StepInformation, SurveyQuestion
+import re
 
 
 async def run_create_questions_from_article_agent(
@@ -29,12 +30,26 @@ async def run_create_questions_from_article_agent(
 
                 Questions:"""
     # TODO: Here, both few-shot and RAG should be used.
-    return await run_basic_ollama_agent(
+    response = await run_basic_ollama_agent(
         name="create_questions_from_article_agent",
         prompt=prompt,
         server_list=[],
-        output_type=list[str],
+        output_type=str,
     )
+    
+    # Parse text response to extract questions (fallback for weak models that can't produce structured output)
+    if response and isinstance(response, str):
+        lines = response.split('\n')
+        questions = []
+        for line in lines:
+            # Clean line by removing quotes and whitespace
+            line = line.strip().strip('"').strip("'")
+            # Extract lines that look like questions (end with ? and have reasonable length)
+            if line.endswith('?') and len(line) > 10:
+                questions.append(line)
+        return questions[:num_questions] if questions else None
+    
+    return response
 
 
 async def run_single_create_questions_from_article_agent(

@@ -6,3 +6,11 @@ mcp[cli]
 # API backend
 fastapi[standard]
 python-dotenv
+#sciBert
+torch
+transformers
+numpy
+#BERTopic
+bertopic>=0.16.0
+umap-learn>=0.5.3
+numba>=0.57.0

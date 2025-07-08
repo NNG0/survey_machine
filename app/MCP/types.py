@@ -56,25 +56,23 @@ class RequestStatus(BaseModel):
     # Does not change over the lifetime of the request.
 
     trace_file: Optional[str] = Field(
-        default=None, alias="__trace_file__"
+        default=None,
     )  # The file to which the status is saved. If None, it is not saved to a file.
     # Any time the status is updated, a new line with the updated status is written to the file.
     # In Python, holding a file handle is not recommended, so we will open and close the file each time we write to it.
 
     def __init__(
         self,
-        research_question: str,
-        paper_limit: int | None = None,
+        papers: list[tuple[Article, float | None]] = [],
+        questions: list[tuple[SurveyQuestion, float | None]] = [],
         trace_file: str | None = None,
+        settings: StatusSetting | None = None,
     ):
         """Initializes the RequestStatus object.
         If trace_file is given, the status will be saved to that file.
         """
-        settings = StatusSetting(
-            research_question=research_question, paper_limit=paper_limit or 5
-        )
         super().__init__(
-            papers=[], questions=[], settings=settings, trace_file=trace_file
+            papers=papers, questions=questions, settings=settings, trace_file=trace_file
         )
 
     def pretty_print(self):
@@ -82,6 +80,11 @@ class RequestStatus(BaseModel):
         print(
             f"Request status: {self.model_dump()}"
         )  # TODO: Add a better pretty print function
+
+    def to_dict(self) -> dict:
+        """Returns the status as a dictionary."""
+        # return self.__dict__ # This only bubbles up the JSON serialization problem.
+        return self.model_dump()
 
     # I removed the setattr and gettrace methods stuff, because that was a gigantic hack to get the trace file to work.
     # Now it can be done manually in a much cleaner way.

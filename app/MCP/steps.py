@@ -133,6 +133,9 @@ async def run_single_stage(
         step_info.add_warning("No more steps to take.")
         return request_status, step_info  # No more steps to take.
 
+    # DEBUG
+    # print(f"Running step: {step[0]}")
+
     name, single_step_fn, all_step_fn, _ = step
     request_status, step_info = await all_step_fn(request_status)
 

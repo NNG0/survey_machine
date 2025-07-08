@@ -42,7 +42,8 @@ mcp_settings = MCPSettings(
 
 openai_settings = OpenAISettings(
     # base_url="http://10.89.0.3:11434/v1", # The ollama virtual machine
-    base_url="http://host.docker.internal:11434/v1",  # The local ollama server (native is faster on my machine)
+    # base_url="http://host.docker.internal:11434/v1",  # The local ollama server (native is faster on my machine)
+    base_url="http://localhost:11434/v1",  # The ollama server running on the host machine
     api_key="ollama",
     # The setting of the model using kwargs isn't documented, but it works.
     # default_model="qwen3", # 8b Model

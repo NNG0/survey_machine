@@ -1,12 +1,15 @@
 from typing import Optional
 from .base import run_basic_ollama_agent
-from MCP.types import Article, RequestStatus, StepInformation
+from MCP.types import Article, RequestStatus, StepInformation, OpenRouter
 
 
 async def run_relevant_literature_agent(
     research_question: str, paper_limit: int
 ) -> Optional[list[Article]]:
     """This agent receives the research question and returns a list of relevant literature in the proper format."""
+
+    # DEBUG
+    print(f"Running relevant literature agent for question: {research_question}")
 
     prompt = f"""
     You are a research assistant. Given a research question, you need to find relevant literature.
@@ -19,6 +22,7 @@ async def run_relevant_literature_agent(
         prompt=prompt,
         server_list=["google_scholar"],
         output_type=list[Article],
+        custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
 
 
@@ -46,6 +50,8 @@ async def run_single_relevant_literature_agent(
     elif isinstance(articles, Exception):
         step_info.add_error(f"Error finding relevant literature: {articles}")
     else:
+        print("Error: The relevant literature agent did not return a list of articles.")
+        print(articles)
         step_info.add_error("Error finding relevant literature.")
 
     return request_status, step_info

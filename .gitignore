@@ -2,6 +2,8 @@
 
 .vscode/*
 .idea/*
+**__pycache__**
+
 
 # Symlink to the ollama folder on the host machine
 .ollama
@@ -9,3 +11,4 @@
 .env
 
 
+app/MCP/mcp_agent.secrets.yaml

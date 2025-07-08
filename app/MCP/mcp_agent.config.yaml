@@ -19,9 +19,8 @@ mcp:
       args: ["-y", "@modelcontextprotocol/server-filesystem"]
 
 openai:
-  base_url: "http://localhost:11434/v1"
-  api_key: ollama
-  default_nodel: qwen3
+  base_url: "https://openrouter.ai/api/v1"
+  default_nodel: mistralai/mistral-7b-instruct:free
 
 ollama:
   base_url: "http://localhost:11434/v1"

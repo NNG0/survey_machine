@@ -1,0 +1,2 @@
+# We don't want to track the secrets file, as it contains the API key. 
+mcp_agent.secrets.yaml

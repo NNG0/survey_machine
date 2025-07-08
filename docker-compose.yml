@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile
     container_name: survey-machine-instance
     hostname: survey-machine-instance
-    # ports:
-    #   - "8502:8502"
+    ports:
+      - "8001:8001"
     networks:
       survey-machine:
         # 10.89.0.2

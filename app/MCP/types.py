@@ -1,8 +1,7 @@
-import asyncio
 from enum import Enum
-import time
-from typing import Awaitable, Callable, Literal, Optional, Self, TypeVar
+from typing import Literal, Optional, Self
 
+from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
 from pydantic import BaseModel, Field
 
 
@@ -57,25 +56,23 @@ class RequestStatus(BaseModel):
     # Does not change over the lifetime of the request.
 
     trace_file: Optional[str] = Field(
-        default=None, alias="__trace_file__"
+        default=None,
     )  # The file to which the status is saved. If None, it is not saved to a file.
     # Any time the status is updated, a new line with the updated status is written to the file.
     # In Python, holding a file handle is not recommended, so we will open and close the file each time we write to it.
 
     def __init__(
         self,
-        research_question: str,
-        paper_limit: int | None = None,
+        papers: list[tuple[Article, float | None]] = [],
+        questions: list[tuple[SurveyQuestion, float | None]] = [],
         trace_file: str | None = None,
+        settings: StatusSetting | None = None,
     ):
         """Initializes the RequestStatus object.
         If trace_file is given, the status will be saved to that file.
         """
-        settings = StatusSetting(
-            research_question=research_question, paper_limit=paper_limit or 5
-        )
         super().__init__(
-            papers=[], questions=[], settings=settings, trace_file=trace_file
+            papers=papers, questions=questions, settings=settings, trace_file=trace_file
         )
 
     def pretty_print(self):
@@ -83,6 +80,11 @@ class RequestStatus(BaseModel):
         print(
             f"Request status: {self.model_dump()}"
         )  # TODO: Add a better pretty print function
+
+    def to_dict(self) -> dict:
+        """Returns the status as a dictionary."""
+        # return self.__dict__ # This only bubbles up the JSON serialization problem.
+        return self.model_dump()
 
     # I removed the setattr and gettrace methods stuff, because that was a gigantic hack to get the trace file to work.
     # Now it can be done manually in a much cleaner way.
@@ -142,3 +144,46 @@ class RequestStages(Enum):
     CHECKING_QUESTION_RELEVANCE = 400
     FORMATTING_SURVEY_QUESTIONS = 500
     FINISHED = 999
+
+
+class SupportedProviders(object):
+    """An abstract class to express the different providers and models that are supported by the backend."""
+
+    # The library only needs a single function, which gives back an object representing the provider.
+    def get_provider(self, agent=None) -> AugmentedLLM:
+        """Returns an object representing the provider."""
+        raise NotImplementedError("This method should be implemented by the subclass.")
+
+
+class Ollama(SupportedProviders):
+    """A class that represents the Ollama provider. Can specify a custom model."""
+
+    model: str = "qwen3"  # Default model to use if none is specified.
+
+    def __init__(self, model: str = "qwen"):
+        """Initializes the Ollama provider with a specific model."""
+        self.model = model
+
+    def get_provider(self, agent=None) -> AugmentedLLM:
+        """Returns an Ollama provider with the specified model."""
+        from mcp_agent.workflows.llm.augmented_llm_ollama import OllamaAugmentedLLM
+
+        if agent:
+            # If an agent is provided, pass it to the OllamaAugmentedLLM
+            return OllamaAugmentedLLM(default_model=self.model, agent=agent)
+        return OllamaAugmentedLLM(default_model=self.model)
+
+
+class OpenRouter(SupportedProviders):
+    """A class that represents the OpenRouter provider. It uses the OpenAI Provider, so the API key in the secrets file needs to be set on the OpenAI provider."""
+
+    def get_provider(self, agent=None) -> AugmentedLLM:
+        """Returns an OpenRouter provider."""
+        from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
+
+        if agent:
+            # If an agent is provided, pass it to the OpenAIAugmentedLLM
+            return OpenAIAugmentedLLM(
+                agent=agent, base_url="https://api.openrouter.ai/v1"
+            )
+        return OpenAIAugmentedLLM()

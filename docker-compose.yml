@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile
     container_name: survey-machine-instance
     hostname: survey-machine-instance
-    # ports:
-    #   - "8502:8502"
+    ports:
+      - "8001:8001"
     networks:
       survey-machine:
         # 10.89.0.2
@@ -17,7 +17,7 @@ services:
     container_name: ollama-instance
     hostname: ollama-instance
     volumes:
-      - .ollama:/root/.ollama:ro # The .ollama directory is a symlink to the main ollama directory
+      - .ollama:/root/.ollama # The .ollama directory is a symlink to the main ollama directory
     networks:
       survey-machine:
         # 10.89.0.3
@@ -36,7 +36,7 @@ services:
     container_name: literature_access
     ports:
       - "8000:8000"
-    command: fastapi run ./app/literature_access/main.py --port 8000
+    command: fastapi run literature_access/main.py --port 8000
 
 # Necessary for the ollama container to work
 networks:

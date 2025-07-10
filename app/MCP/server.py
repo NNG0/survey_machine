@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 from MCP.steps import (
@@ -70,7 +71,7 @@ openai_settings = OpenAISettings(
     # default_model="qwen3", # 8b Model
     default_model="qwen3:0.6b",  # My memory isn't large enough for 8b, sorry :(
     # default_model="llama3.2", # Trying out a non-reasoning model
-    http_client=httpx.Client(timeout=30.0),
+    http_client=httpx.AsyncClient(timeout=30.0),
 )
 
 logger = LoggerSettings(
@@ -90,9 +91,16 @@ mcp_app = MCPApp(
 
 # with mcp_app.run() as mcp_agent_app:
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
-@app.get("/run_single_next_step")
+@app.post("/run_single_next_step")
 async def run_single_step(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -106,7 +114,7 @@ async def run_single_step(
         return request_status, step_info
 
 
-@app.get("/next_step")
+@app.post("/next_step")
 async def next_step_endpoint(
     request_status: RequestStatus,
 ) -> tuple[str, str, str, RequestStages] | None:

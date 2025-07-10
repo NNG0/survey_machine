@@ -35,12 +35,12 @@ async def run_basic_ollama_agent(
         # print("Agent created successfully.")
         async with agent:
             # print("Agent context opened successfully.")
-            if custom_provider:
-                # print(f"Attaching custom provider: {custom_provider.get_provider}")
-                llm = await agent.attach_llm(custom_provider.get_provider)
-            else:
-                # print("Attaching default OllamaAugmentedLLM.")
-                llm = await agent.attach_llm(OllamaAugmentedLLM)
+            # if custom_provider:
+            #     # print(f"Attaching custom provider: {custom_provider.get_provider}")
+            #     llm = await agent.attach_llm(custom_provider.get_provider)
+            # else:
+            # print("Attaching default OllamaAugmentedLLM.")
+            llm = await agent.attach_llm(OllamaAugmentedLLM)
             # llm is now definetly defined.
             # print("LLM attached successfully.")
             response = await llm.generate_structured(prompt, response_model=output_type)

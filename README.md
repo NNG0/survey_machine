@@ -30,6 +30,6 @@ While docker is suppoed to just work, it is often misconfigured.
 For everything to actually run, the docker engine must first be started.
 Then, if the pc was restarted recents, the file at `~/.docker/config.json` must be edited to say `credStore` instead of `credsStore` (Yes, really).
 
-Then, because the ollama container is not by default enabled, ollama needs to be installed locally and have the `qwen3:4b` model installed (by `ollama pull qwen3b:4b`).
+Then, because the ollama container is not by default enabled, ollama needs to be installed locally and have the `qwen3:4b` model installed (by `ollama pull qwen3:4b`).
 
 The default ollama model is currently `qwen3:4b` and is defined in the `main.py` where the OpenAI settings are set up.

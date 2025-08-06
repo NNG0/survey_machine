@@ -69,9 +69,9 @@ openai_settings = OpenAISettings(
     api_key="ollama",
     # The setting of the model using kwargs isn't documented, but it works.
     # default_model="qwen3", # 8b Model
-    default_model="qwen3:0.6b",  # My memory isn't large enough for 8b, sorry :(
+    default_model="qwen3:4b",  # My memory isn't large enough for 8b, sorry :(
     # default_model="llama3.2", # Trying out a non-reasoning model
-    http_client=httpx.AsyncClient(timeout=30.0),
+    http_client=httpx.Client(timeout=30.0),
 )
 
 logger = LoggerSettings(

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 import httpx
 
@@ -61,17 +62,31 @@ mcp_settings = MCPSettings(
     }
 )
 
-openai_settings = OpenAISettings(
-    # base_url="http://10.89.0.3:11434/v1", # The ollama virtual machine
-    # base_url="http://host.docker.internal:11434/v1",  # The local ollama server (native is faster on my machine)
-    base_url="http://localhost:11434/v1",  # The ollama server running on the host machine
-    api_key="ollama",
-    # The setting of the model using kwargs isn't documented, but it works.
-    # default_model="qwen3", # 8b Model
-    default_model="qwen3:0.6b",  # My memory isn't large enough for 8b, sorry :(
-    # default_model="llama3.2", # Trying out a non-reasoning model
-    http_client=httpx.Client(timeout=30.0),
-)
+
+def get_openai_settings():
+    """Create OpenAI settings with a new AsyncClient for each request."""
+    is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
+    if is_in_docker:
+        base_url = "http://host.docker.internal:11434/v1"  # The local ollama server from within docker (native is faster on some machines including mine)
+        # base_url="http://ollama-instance:11434/v1",  # The ollama server running inside docker (docker handles DNS)
+        pass
+    else:
+        base_url = "http://127.0.0.1:11434/v1"  # The ollama address when running without docker
+
+    # Do a quick ping to that address to make sure it works (without "/v1")
+    try:
+        response = httpx.get(f"{base_url[:-3]}")
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        print(f"Error pinging ollama server: {e}, are you sure it is running?")
+
+    return OpenAISettings(
+        base_url=base_url,  # The selected ollama address
+        api_key="ollama",
+        http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
+        default_model="qwen3:0.6b",  # type: ignore
+    )
+
 
 logger = LoggerSettings(
     # level="debug",
@@ -81,11 +96,16 @@ logger = LoggerSettings(
 
 # time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running
 
-mcp_app = MCPApp(
-    name="hello_world_agent",
-    settings=Settings(mcp=mcp_settings, openai=openai_settings, logger=logger),
-    human_input_callback=None,
-)
+
+def create_mcp_app():
+    """Create a new MCPApp instance with properly initialized async client."""
+    return MCPApp(
+        name="hello_world_agent",
+        settings=Settings(
+            mcp=mcp_settings, openai=get_openai_settings(), logger=logger
+        ),
+        human_input_callback=None,
+    )
 
 
 # with mcp_app.run() as mcp_agent_app:
@@ -98,6 +118,7 @@ async def run_single_step(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run a single step in the request status."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single next step for request: {request_status.settings.research_question}"
@@ -131,6 +152,7 @@ async def run_single_stage_endpoint(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run all steps in the request status for this single stage."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single stage for request: {request_status.settings.research_question}"
@@ -146,6 +168,7 @@ async def run_until_before_stage_endpoint(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run all steps in the request status until the specified stage is reached."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running until before stage {stage} for request: {request_status.settings.research_question}"
@@ -163,6 +186,7 @@ async def run_single_check_literature_relevance(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the single check literature relevance agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single check literature relevance for request: {request_status.settings.research_question}"
@@ -179,6 +203,7 @@ async def run_all_check_literature_relevance(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the all check literature relevance agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running all check literature relevance for request: {request_status.settings.research_question}"
@@ -195,6 +220,7 @@ async def run_single_check_question_relevance(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the single check question relevance agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single check question relevance for request: {request_status.settings.research_question}"
@@ -211,6 +237,7 @@ async def run_all_check_question_relevance(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the all check question relevance agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running all check question relevance for request: {request_status.settings.research_question}"
@@ -227,6 +254,7 @@ async def run_single_create_survey_question(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the single create survey question agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single create survey question for request: {request_status.settings.research_question}"
@@ -243,6 +271,7 @@ async def run_all_create_survey_questions(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the all create survey questions agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running all create survey questions for request: {request_status.settings.research_question}"
@@ -259,6 +288,7 @@ async def run_single_relevant_literature(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the single relevant literature agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single relevant literature for request: {request_status.settings.research_question}"
@@ -275,6 +305,7 @@ async def run_all_relevant_literature(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the all relevant literature agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running all relevant literature for request: {request_status.settings.research_question}"
@@ -291,6 +322,7 @@ async def run_single_create_questions_from_article(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the single create questions from article agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running single create questions from article for request: {request_status.settings.research_question}"
@@ -308,6 +340,7 @@ async def run_all_create_questions_from_article(
 ) -> tuple[RequestStatus, StepInformation]:
     """Run the all create questions from article agent."""
     step_info = StepInformation()
+    mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
             f"Running all create questions from article for request: {request_status.settings.research_question}"

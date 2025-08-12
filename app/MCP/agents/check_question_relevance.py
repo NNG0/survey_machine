@@ -1,6 +1,6 @@
 from typing import Optional
 
-from MCP.types import RequestStatus, StepInformation
+from ..types import RequestStatus, StepInformation
 from .base import run_basic_ollama_agent
 
 

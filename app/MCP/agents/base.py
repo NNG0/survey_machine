@@ -6,7 +6,7 @@ from typing import Optional, Type, TypeVar
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_ollama import OllamaAugmentedLLM
 
-from MCP.types import SupportedProviders
+from ..types import SupportedProviders
 
 import traceback
 

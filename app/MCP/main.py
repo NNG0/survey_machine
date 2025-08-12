@@ -3,7 +3,7 @@ import asyncio
 import requests
 
 
-from MCP.types import RequestStages, RequestStatus, StepInformation, StatusSetting
+from .types import RequestStages, RequestStatus, StepInformation, StatusSetting
 
 
 # Drafting the structure:
@@ -96,6 +96,9 @@ if __name__ == "__main__":
     else:
         # Else, we expect that something happened, for example, a test run.
         if sys.argv[-1] == "test":
+            print("Running test loop.")
             asyncio.run(
                 new_main_loop("What is the impact of social media on mental health?")
             )
+        else:
+            print("Unknown argument. Please use 'test' to run the test loop.")

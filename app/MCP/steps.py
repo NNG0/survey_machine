@@ -2,24 +2,24 @@
 
 # It depends on all the agents, so you should pretty much only import it in the main file
 from typing import Awaitable, Callable
-from MCP.types import RequestStages, RequestStatus, StepInformation
-from MCP.agents.check_literature_relevance import (
+from .types import RequestStages, RequestStatus, StepInformation
+from .agents.check_literature_relevance import (
     run_single_check_literature_relevance_agent,
     run_all_check_literature_relevance_agent,
 )
-from MCP.agents.check_question_relevance import (
+from .agents.check_question_relevance import (
     run_all_check_question_relevance_agent,
     run_single_check_question_relevance_agent,
 )
-from MCP.agents.create_survey_question import (
+from .agents.create_survey_question import (
     run_single_create_survey_question_agent,
     run_all_create_survey_questions_agent,
 )
-from MCP.agents.relevant_literature import (
+from .agents.relevant_literature import (
     run_all_relevant_literature_agent,
     run_single_relevant_literature_agent,
 )
-from MCP.agents.create_questions_from_article import (
+from .agents.create_questions_from_article import (
     run_all_create_questions_from_article_agent,
     run_single_create_questions_from_article_agent,
 )

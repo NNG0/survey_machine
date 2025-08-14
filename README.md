@@ -33,3 +33,7 @@ Then, if the pc was restarted recents, the file at `~/.docker/config.json` must 
 Then, because the ollama container is not by default enabled, ollama needs to be installed locally and have the `qwen3:4b` model installed (by `ollama pull qwen3:4b`).
 
 The default ollama model is currently `qwen3:4b` and is defined in the `main.py` where the OpenAI settings are set up.
+
+### Test run of MCP
+
+A test run of the MCP functionality can be done by running `uv run -m MCP.main test`.

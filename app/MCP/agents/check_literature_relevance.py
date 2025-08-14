@@ -1,6 +1,6 @@
 from typing import List, Optional
 from .base import run_basic_ollama_agent
-from MCP.types import Article, RequestStatus, StepInformation
+from ..types import Article, RequestStatus, StepInformation
 
 
 async def run_check_literature_relevance_agent(

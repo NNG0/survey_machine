@@ -1,6 +1,6 @@
 from typing import Optional
 from .base import run_basic_ollama_agent
-from MCP.types import Article, RequestStatus, StepInformation, SurveyQuestion
+from ..types import Article, RequestStatus, StepInformation, SurveyQuestion
 
 
 async def run_create_questions_from_article_agent(

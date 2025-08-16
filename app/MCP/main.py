@@ -38,11 +38,15 @@ async def new_main_loop(research_question: str):
 
     settings = StatusSetting(
         research_question=research_question,
-        paper_limit=2,  # For testing, we limit the number of papers to 2.
+        paper_limit=4,  # For testing, we limit the number of papers to 4.
+        num_key_questions=5,  # Also for testing
     )
 
     status = RequestStatus(
-        settings=settings  # For testing, we limit the number of papers to 2.
+        settings=settings,  # Testing setup
+        papers=[],  # Start with an empty list of papers
+        results=[],  # Start with an empty list of results
+        key_questions=[],  # Start with an empty list of key questions
     )  # The trace file is named with the current timestamp, so it is unique.
 
     # print(f"Initial status: {status.to_dict()}")
@@ -70,12 +74,13 @@ async def new_main_loop(research_question: str):
         response = r.json()
 
         # Debug?
-        print(f"Response: {response}")
+        # print(f"Response: {response}")
 
         status = RequestStatus(**response[0])
         step_info = StepInformation(**response[1])
 
-        print(f"Current status: {status}")
+        print("Current status:")
+        status.pretty_print()  # Print the current status
         step_info.print_warnings_and_errors()
 
         # Get the next step

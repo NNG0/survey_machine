@@ -23,27 +23,30 @@ from mcp_agent.config import (
     OpenAISettings,
 )
 
-from .agents.check_literature_relevance import (
-    run_single_check_literature_relevance_agent,
-    run_all_check_literature_relevance_agent,
-)
-from .agents.check_question_relevance import (
-    run_all_check_question_relevance_agent,
-    run_single_check_question_relevance_agent,
-)
-from .agents.create_survey_question import (
-    run_single_create_survey_question_agent,
-    run_all_create_survey_questions_agent,
-)
 from .agents.relevant_literature import (
     run_all_relevant_literature_agent,
     run_single_relevant_literature_agent,
 )
-from .agents.create_questions_from_article import (
-    run_all_create_questions_from_article_agent,
-    run_single_create_questions_from_article_agent,
+
+from .agents.adjust_key_questions import (
+    run_all_adjust_questions_agent,
+    run_single_adjust_questions_agent,
 )
 
+from .agents.create_key_questions import (
+    run_all_create_key_questions_agent,
+    run_single_create_key_questions_agent,
+)
+
+from .agents.extract_results import (
+    run_all_extract_results_agent,
+    run_single_extract_results_agent,
+)
+
+from .agents.parse_papers import (
+    run_all_parse_papers_agent,
+    run_single_parse_papers_agent,
+)
 
 # A simple server that runs the MCP agents.
 # Basically, it will support the `steps.py` file and the `agents` folder.
@@ -89,9 +92,9 @@ def get_openai_settings():
 
 
 logger = LoggerSettings(
-    # level="debug",
+    level="debug",
     # level="info",
-    level="warning",  # Set to warning to avoid too much output
+    # level="warning",  # Set to warning to avoid too much output
 )
 
 # time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running
@@ -180,108 +183,6 @@ async def run_until_before_stage_endpoint(
 # Now, all individual agent steps are defined here.
 
 
-@app.get("/run_single_check_literature_relevance")
-async def run_single_check_literature_relevance(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the single check literature relevance agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running single check literature relevance for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_single_check_literature_relevance_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
-@app.get("/run_all_check_literature_relevance")
-async def run_all_check_literature_relevance(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the all check literature relevance agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running all check literature relevance for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_all_check_literature_relevance_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
-@app.get("/run_single_check_question_relevance")
-async def run_single_check_question_relevance(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the single check question relevance agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running single check question relevance for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_single_check_question_relevance_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
-@app.get("/run_all_check_question_relevance")
-async def run_all_check_question_relevance(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the all check question relevance agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running all check question relevance for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_all_check_question_relevance_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
-@app.get("/run_single_create_survey_question")
-async def run_single_create_survey_question(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the single create survey question agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running single create survey question for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_single_create_survey_question_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
-@app.get("/run_all_create_survey_questions")
-async def run_all_create_survey_questions(
-    request_status: RequestStatus,
-) -> tuple[RequestStatus, StepInformation]:
-    """Run the all create survey questions agent."""
-    step_info = StepInformation()
-    mcp_app = create_mcp_app()
-    async with mcp_app.run() as mcp_agent_app:
-        mcp_agent_app.logger.info(
-            f"Running all create survey questions for request: {request_status.settings.research_question}"
-        )
-        request_status, step_info = await run_all_create_survey_questions_agent(
-            request_status
-        )
-        return request_status, step_info
-
-
 @app.get("/run_single_relevant_literature")
 async def run_single_relevant_literature(
     request_status: RequestStatus,
@@ -316,36 +217,129 @@ async def run_all_relevant_literature(
         return request_status, step_info
 
 
-@app.get("/run_single_create_questions_from_article")
-async def run_single_create_questions_from_article(
+@app.get("/run_single_adjust_questions")
+async def run_single_adjust_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
-    """Run the single create questions from article agent."""
+    """Run the single adjust questions agent."""
     step_info = StepInformation()
     mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
-            f"Running single create questions from article for request: {request_status.settings.research_question}"
+            f"Running single adjust questions for request: {request_status.settings.research_question}"
         )
-        (
-            request_status,
-            step_info,
-        ) = await run_single_create_questions_from_article_agent(request_status)
+        request_status, step_info = await run_single_adjust_questions_agent(
+            request_status
+        )
         return request_status, step_info
 
 
-@app.get("/run_all_create_questions_from_article")
-async def run_all_create_questions_from_article(
+@app.get("/run_all_adjust_questions")
+async def run_all_adjust_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
-    """Run the all create questions from article agent."""
+    """Run the all adjust questions agent."""
     step_info = StepInformation()
     mcp_app = create_mcp_app()
     async with mcp_app.run() as mcp_agent_app:
         mcp_agent_app.logger.info(
-            f"Running all create questions from article for request: {request_status.settings.research_question}"
+            f"Running all adjust questions for request: {request_status.settings.research_question}"
         )
-        request_status, step_info = await run_all_create_questions_from_article_agent(
+        request_status, step_info = await run_all_adjust_questions_agent(request_status)
+        return request_status, step_info
+
+
+@app.get("/run_single_create_key_questions")
+async def run_single_create_key_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single create key questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single create key questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_create_key_questions_agent(
             request_status
         )
+        return request_status, step_info
+
+
+@app.get("/run_all_create_key_questions")
+async def run_all_create_key_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all create key questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all create key questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_create_key_questions_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.get("/run_single_extract_results")
+async def run_single_extract_results(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single extract results agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single extract results for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_extract_results_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.get("/run_all_extract_results")
+async def run_all_extract_results(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all extract results agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all extract results for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_extract_results_agent(request_status)
+        return request_status, step_info
+
+
+@app.get("/run_single_parse_papers")
+async def run_single_parse_papers(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single parse papers agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single parse papers for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_parse_papers_agent(request_status)
+        return request_status, step_info
+
+
+@app.get("/run_all_parse_papers")
+async def run_all_parse_papers(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all parse papers agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all parse papers for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_parse_papers_agent(request_status)
         return request_status, step_info

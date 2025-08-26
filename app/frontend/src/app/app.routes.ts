@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
+import { CollectionComponent } from './components/collection/collection.component';
 
 export const routes: Routes = [
   {
-    path: '',
-    redirectTo: '/',
-    pathMatch: 'full'
+    path: 'collection',
+    component: CollectionComponent
   }
 ];

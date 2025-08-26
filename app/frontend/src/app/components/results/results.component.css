@@ -96,12 +96,32 @@
 }
 
 .save-link {
-  color: #3f51b5;
-  text-decoration: none;
+  background-color: #2e7d32; /* green */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .save-link:hover {
-  text-decoration: underline;
+  background-color: #27672a;
+}
+
+.save-link:active {
+  background-color: #1f5422;
+}
+
+.save-link.saved {
+  background-color: #d32f2f; /* red */
+}
+
+.save-link.saved:hover {
+  background-color: #b71c1c;
 }

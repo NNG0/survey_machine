@@ -51,7 +51,7 @@ async def new_main_loop(research_question: str):
 
     # print(f"Initial status: {status.to_dict()}")
 
-    stage = requests.get(
+    stage = requests.post(
         "http://localhost:8001/next_step",
         json=status.to_dict(),
     )
@@ -63,7 +63,7 @@ async def new_main_loop(research_question: str):
     ):
         response = stage.json()
         print(response[0])  # Print the human-readable message:
-        r = requests.get(
+        r = requests.post(
             "http://localhost:8001/run_single_next_step",  # Try to run the next step
             json=status.to_dict(),
             headers={"Content-Type": "application/json"},
@@ -84,7 +84,7 @@ async def new_main_loop(research_question: str):
         step_info.print_warnings_and_errors()
 
         # Get the next step
-        stage = requests.get(
+        stage = requests.post(
             "http://localhost:8001/next_step",
             json=status.to_dict(),
         )

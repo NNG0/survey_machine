@@ -13,9 +13,10 @@ RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
 
 # Copy the rest of the application code
 COPY app ./app
+COPY .env /.env
 
 ENV AM_I_IN_DOCKER=true
 
 WORKDIR /app/app
-CMD ["fastapi", "run", "MCP/server.py", "--host", "0.0.0.0", "--port", "8001"] 
+CMD ["fastapi", "run", "MCP/server.py", "--host", "0.0.0.0", "--port", "8001"]
 # It's on 8001 to not conflict with the main FastAPI app on port 8000

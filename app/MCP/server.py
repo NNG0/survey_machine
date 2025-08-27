@@ -76,6 +76,18 @@ def get_openai_settings():
     else:
         base_url = "http://127.0.0.1:11434/v1"  # The ollama address when running without docker
 
+    # If the GWDG api key is found in the .env file, use that endpoint instead
+    import dotenv
+
+    dotenv.load_dotenv()
+    gwdg_api_key = os.getenv("GWDG_API_KEY")
+    if gwdg_api_key:
+        base_url = "https://chat-ai.academiccloud.de/v1"
+        default_model = "qwen3-32b"
+        # default_model = "qwen3-235b-a22b"
+    else:
+        default_model = "qwen3:0.6b"
+
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
         response = httpx.get(f"{base_url[:-3]}")
@@ -85,16 +97,16 @@ def get_openai_settings():
 
     return OpenAISettings(
         base_url=base_url,  # The selected ollama address
-        api_key="ollama",
+        api_key=gwdg_api_key or "ollama",
         http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
-        default_model="qwen3:0.6b",  # type: ignore
+        default_model=default_model,  # type: ignore
     )
 
 
 logger = LoggerSettings(
-    level="debug",
+    # level="debug",
     # level="info",
-    # level="warning",  # Set to warning to avoid too much output
+    level="warning",  # Set to warning to avoid too much output
 )
 
 # time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running

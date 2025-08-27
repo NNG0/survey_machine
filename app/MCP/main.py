@@ -38,8 +38,8 @@ async def new_main_loop(research_question: str):
 
     settings = StatusSetting(
         research_question=research_question,
-        paper_limit=4,  # For testing, we limit the number of papers to 4.
-        num_key_questions=5,  # Also for testing
+        paper_limit=2,  # For testing, we limit the number of papers.
+        num_key_questions=2,  # Also for testing
     )
 
     status = RequestStatus(

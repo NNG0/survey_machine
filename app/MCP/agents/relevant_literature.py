@@ -1,11 +1,11 @@
 from typing import Optional
 from .base import run_basic_ollama_agent
-from ..types import Article, RequestStatus, StepInformation, OpenRouter
+from ..types import Article, RawArticle, RequestStatus, StepInformation, OpenRouter
 
 
 async def run_relevant_literature_agent(
     research_question: str, paper_limit: int
-) -> Optional[list[Article]]:
+) -> Optional[list[RawArticle]]:
     """This agent receives the research question and returns a list of relevant literature in the proper format."""
 
     # DEBUG
@@ -21,7 +21,7 @@ async def run_relevant_literature_agent(
         name="relevant_literature_agent",
         prompt=prompt,
         server_list=["google_scholar"],
-        output_type=list[Article],
+        output_type=list[RawArticle],
         custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
 
@@ -45,8 +45,17 @@ async def run_single_relevant_literature_agent(
         request_status.settings.research_question, request_status.settings.paper_limit
     )
 
-    if articles is not None and isinstance(articles, list):
-        request_status.papers = [(article, None) for article in articles]
+    if (
+        articles is not None
+        and isinstance(articles, list)
+        and len(articles) > 0
+        and all(isinstance(article, RawArticle) for article in articles)
+    ):
+        # request_status.papers = articles
+        request_status.papers = [
+            Article(article=article, methods=None, problem_questions=None)
+            for article in articles
+        ]
     elif isinstance(articles, Exception):
         step_info.add_error(f"Error finding relevant literature: {articles}")
     else:

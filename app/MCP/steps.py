@@ -2,26 +2,29 @@
 
 # It depends on all the agents, so you should pretty much only import it in the main file
 from typing import Awaitable, Callable
+
+from .agents.extract_results import (
+    run_all_extract_results_agent,
+    run_single_extract_results_agent,
+)
+
+from .agents.adjust_key_questions import (
+    run_all_adjust_questions_agent,
+    run_single_adjust_questions_agent,
+)
+
+from .agents.create_key_questions import (
+    run_all_create_key_questions_agent,
+    run_single_create_key_questions_agent,
+)
+from .agents.parse_papers import (
+    run_all_parse_papers_agent,
+    run_single_parse_papers_agent,
+)
 from .types import RequestStages, RequestStatus, StepInformation
-from .agents.check_literature_relevance import (
-    run_single_check_literature_relevance_agent,
-    run_all_check_literature_relevance_agent,
-)
-from .agents.check_question_relevance import (
-    run_all_check_question_relevance_agent,
-    run_single_check_question_relevance_agent,
-)
-from .agents.create_survey_question import (
-    run_single_create_survey_question_agent,
-    run_all_create_survey_questions_agent,
-)
 from .agents.relevant_literature import (
     run_all_relevant_literature_agent,
     run_single_relevant_literature_agent,
-)
-from .agents.create_questions_from_article import (
-    run_all_create_questions_from_article_agent,
-    run_single_create_questions_from_article_agent,
 )
 
 
@@ -45,6 +48,15 @@ def next_step(
     """
 
     # The very first step is to run the relevant literature agent.
+    # This is dependent on whether there are already key questions first created from the research question.
+    if status.key_questions is None or len(status.key_questions) == 0:
+        return (
+            "Creating key questions",
+            run_single_create_key_questions_agent,
+            run_all_create_key_questions_agent,
+            RequestStages.CREATING_KEY_QUESTIONS,
+        )
+    # Next, we need to find relevant literature.
     # This is dependent on whether there are already papers in the request status.
     if not status.papers:
         return (
@@ -54,50 +66,38 @@ def next_step(
             RequestStages.FINDING_LITERATURE,
         )
 
-    # Next, we check if there are any papers that need to be checked for relevance.
-    if any(relevance is None for _, relevance in status.papers):
+    # Now we do have papers, but the information about their problem questions and methods is still missing.
+    if any(
+        article.problem_questions is None or article.methods is None
+        for article in status.papers
+    ):
         return (
-            "Checking relevance of literature",
-            run_single_check_literature_relevance_agent,
-            run_all_check_literature_relevance_agent,
-            RequestStages.CHECKING_LITERATURE_RELEVANCE,
+            "Parsing papers",
+            run_single_parse_papers_agent,
+            run_all_parse_papers_agent,
+            RequestStages.PARSE_PAPERS,
         )
 
     # If we have papers, we can move on to the next step.
-    # If there are no questions or not enough questions, we need to create them.
-    # TODO: If ever a question reworker agent is implemented, we need to make sure we don't revert back to this step.
-    if (
-        not status.questions
-        or len(status.questions)
-        < status.settings.paper_limit * status.settings.question_per_article
-    ):
+    # We adjust the key questions to fit the papers better.
+    # To mark this, each outputted paper of this step is assigned the paper it matches closely.
+    # (key questions must at least contain one paper, because else it would have hit the CREATING_KEY_QUESTIONS part)
+    if any(question[1] is None for question in status.key_questions):
         return (
-            "Creating survey questions",
-            run_single_create_questions_from_article_agent,
-            run_all_create_questions_from_article_agent,
-            RequestStages.CREATING_SURVEY_QUESTIONS,
+            "Assigning papers to questions",
+            run_single_adjust_questions_agent,
+            run_all_adjust_questions_agent,
+            RequestStages.ADJUST_KEY_QUESTIONS,
         )
 
-    # If we have questions, but some of them need to be checked for relevance, we need to do that.
-    if any(relevance is None for _, relevance in status.questions):
+    # Lastly, we need to extract results from the papers.
+    # This is stored alongside the key questions to give each a solution.
+    if any(question[2] is None for question in status.key_questions):
         return (
-            "Checking relevance of survey questions",
-            run_single_check_question_relevance_agent,
-            run_all_check_question_relevance_agent,
-            RequestStages.CHECKING_QUESTION_RELEVANCE,
-        )
-
-    # Lastly, we need to format all the questions to be survey questions.
-    # This means that all questions should have an answer type and options.
-    if any(
-        question.answer_type is None or question.options is None
-        for question, _ in status.questions
-    ):
-        return (
-            "Formatting survey questions",
-            run_single_create_survey_question_agent,
-            run_all_create_survey_questions_agent,
-            RequestStages.FORMATTING_SURVEY_QUESTIONS,
+            "Extracting results from papers",
+            run_single_extract_results_agent,
+            run_all_extract_results_agent,
+            RequestStages.EXTRACT_RELEVANT_RESULTS_FROM_PAPERS,
         )
 
     # If we reach this point, all steps are done.

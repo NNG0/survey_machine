@@ -1,29 +1,31 @@
-export interface Article {
+export interface RawArticle {
   title: string | null;
   author: string | null;
   abstract: string | null;
   url: string | null;
 }
 
-export type AnswerType = "Text" | "Multiple choice" | "Yes/No" | "Range";
+export interface Article {
+  article: RawArticle;
+  problem_questions: string[] | null;
+  methods: string[] | null;
+}
 
-export interface SurveyQuestion {
-  question: string;
-  answer_type?: AnswerType;
-  options?: string[] | [number, number] | "Text field";
+export interface SurveyResult {
+  result: string;
 }
 
 export interface StatusSetting {
   research_question: string;
-  paper_limit: number;          // Defaults to 5 in Python
-  question_per_article: number; // Defaults to 3 in Python
+  paper_limit: number; // Defaults to 5 in backend
+  num_key_questions: number; // Defaults to 5 in backend
 }
 
 export interface RequestStatus {
-  papers: [Article, number | null][];  // Changed from number to match Python's float | None
-  questions: [SurveyQuestion, number | null][];  // Changed from number to match Python's float | None
+  key_questions: [string, string[] | null, SurveyResult | null][];
+  papers: [Article, number | null][];
+  results: SurveyResult[];
   settings: StatusSetting;
-  trace_file?: string;
 }
 
 export interface StepInformation {
@@ -32,15 +34,10 @@ export interface StepInformation {
 }
 
 export enum RequestStages {
+  CREATING_KEY_QUESTIONS = 50,
   FINDING_LITERATURE = 100,
-  CHECKING_LITERATURE_RELEVANCE = 200,
-  CREATING_SURVEY_QUESTIONS = 300,
-  CHECKING_QUESTION_RELEVANCE = 400,
-  FORMATTING_SURVEY_QUESTIONS = 500,
-  FINISHED = 999
+  PARSE_PAPERS = 200,
+  ADJUST_KEY_QUESTIONS = 300,
+  EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500,
+  FINISHED = 999,
 }
-
-  
-  
-
-  

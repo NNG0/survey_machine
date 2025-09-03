@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
 import { HeroComponent } from './components/hero/hero.component';
 import { ResultsComponent } from './components/results/results.component';
@@ -26,10 +26,11 @@ export class AppComponent {
   showResults = false;
   showTopics = false;
 
+  constructor(public router: Router) {}
+
   onSearch(searchData: {query: string, filters: any}) {
     this.showResults = true;
     this.showTopics = true;
-    // Here you would typically make an API call to get the search results
     console.log('Search query:', searchData.query);
     console.log('Search filters:', searchData.filters);
   }

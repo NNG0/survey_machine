@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 from enum import Enum
 from typing import Literal, Optional, Self
 
 from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
+=======
+import asyncio
+from enum import Enum
+import time
+from typing import Awaitable, Callable, Literal, Optional, Self, TypeVar
+
+>>>>>>> origin/frontend
 from pydantic import BaseModel, Field
 
 
@@ -56,23 +64,41 @@ class RequestStatus(BaseModel):
     # Does not change over the lifetime of the request.
 
     trace_file: Optional[str] = Field(
+<<<<<<< HEAD
         default=None,
+=======
+        default=None, alias="__trace_file__"
+>>>>>>> origin/frontend
     )  # The file to which the status is saved. If None, it is not saved to a file.
     # Any time the status is updated, a new line with the updated status is written to the file.
     # In Python, holding a file handle is not recommended, so we will open and close the file each time we write to it.
 
     def __init__(
         self,
+<<<<<<< HEAD
         papers: list[tuple[Article, float | None]] = [],
         questions: list[tuple[SurveyQuestion, float | None]] = [],
         trace_file: str | None = None,
         settings: StatusSetting | None = None,
+=======
+        research_question: str,
+        paper_limit: int | None = None,
+        trace_file: str | None = None,
+>>>>>>> origin/frontend
     ):
         """Initializes the RequestStatus object.
         If trace_file is given, the status will be saved to that file.
         """
+<<<<<<< HEAD
         super().__init__(
             papers=papers, questions=questions, settings=settings, trace_file=trace_file
+=======
+        settings = StatusSetting(
+            research_question=research_question, paper_limit=paper_limit or 5
+        )
+        super().__init__(
+            papers=[], questions=[], settings=settings, trace_file=trace_file
+>>>>>>> origin/frontend
         )
 
     def pretty_print(self):
@@ -81,11 +107,14 @@ class RequestStatus(BaseModel):
             f"Request status: {self.model_dump()}"
         )  # TODO: Add a better pretty print function
 
+<<<<<<< HEAD
     def to_dict(self) -> dict:
         """Returns the status as a dictionary."""
         # return self.__dict__ # This only bubbles up the JSON serialization problem.
         return self.model_dump()
 
+=======
+>>>>>>> origin/frontend
     # I removed the setattr and gettrace methods stuff, because that was a gigantic hack to get the trace file to work.
     # Now it can be done manually in a much cleaner way.
 
@@ -144,6 +173,7 @@ class RequestStages(Enum):
     CHECKING_QUESTION_RELEVANCE = 400
     FORMATTING_SURVEY_QUESTIONS = 500
     FINISHED = 999
+<<<<<<< HEAD
 
 
 class SupportedProviders(object):
@@ -187,3 +217,5 @@ class OpenRouter(SupportedProviders):
                 agent=agent, base_url="https://api.openrouter.ai/v1"
             )
         return OpenAIAugmentedLLM()
+=======
+>>>>>>> origin/frontend

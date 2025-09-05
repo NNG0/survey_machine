@@ -8,3 +8,4 @@ fastapi[standard]
 python-dotenv
 # database
 sqlalchemy
+aiosqlite

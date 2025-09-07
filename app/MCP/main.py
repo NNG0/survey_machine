@@ -29,9 +29,6 @@ from .types import RequestStages, RequestStatus, StepInformation, StatusSetting
 # TODO: Do we use additional memory for the agents?
 
 
-# TODO: add the output agents
-
-
 async def new_main_loop(research_question: str):
     """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
     This time, while it still uses the stepping system, it runs the agents on the hosted server."""

@@ -63,7 +63,7 @@ async def run_single_fill_draft_content_agent(
     response = await run_basic_ollama_agent(
         name="fill_draft_content",
         prompt=prompt,
-        server_list=[],
+        server_list=["google_scholar"],
         output_type=str,
     )
 

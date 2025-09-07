@@ -16,14 +16,10 @@ async def run_all_create_draft_headings_agent(
 ) -> tuple[RequestStatus, StepInformation]:
     """Create initial draft headings for the final document based on the research question and key questions."""
     step_info = StepInformation()
-    # DEBUG
-    print("Creating draft headings for:", status)
 
     # If draft already exists, don't run the agent again.
     if status.draft and len(status.draft) > 0:
         step_info.add_warning("Draft headings already exist, skipping creation.")
-        # DEBUG
-        print("Draft headings already exist, skipping creation.")
         return status, step_info
 
     # This agent effectively needs access to the entire state to run well, so we format the status in a nice way for it.
@@ -37,10 +33,6 @@ async def run_all_create_draft_headings_agent(
     key_qs_str = (
         "\n".join([f"- {q}" for q in key_questions]) if key_questions else "(none yet)"
     )
-
-    # DEBUG
-    print("Prompting with research questions:", status.settings.research_question)
-    print("Prompting with key questions:", key_qs_str)
 
     prompt = f"""
     You are a research assistant helping to draft a structured literature review.
@@ -70,9 +62,6 @@ async def run_all_create_draft_headings_agent(
         output_type=list[str],
     )
 
-    # DEBUG
-    print("Response from create_draft_headings agent:", response)
-
     if isinstance(response, Exception):
         step_info.add_error(f"Error creating draft headings: {response}")
         return status, step_info
@@ -87,15 +76,10 @@ async def run_all_create_draft_headings_agent(
 
     headings_from_response = [DraftHeading(title=h, content=None) for h in response]
 
-    # DEBUG
-    print("Headings from response:", headings_from_response)
-
     if not headings_from_response:
         step_info.add_error("No valid headings produced.")
         return status, step_info
 
     status.draft = headings_from_response
 
-    # DEBUG
-    print("Updated status with new draft headings:", status)
     return status, step_info

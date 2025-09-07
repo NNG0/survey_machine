@@ -43,9 +43,15 @@ async def run_basic_ollama_agent(
             llm = await agent.attach_llm(OllamaAugmentedLLM)
             # llm is now definetly defined.
             # print("LLM attached successfully.")
-            response = await llm.generate_structured(prompt, response_model=output_type)
+            if output_type is str:
+                # The output type is string, don't force the llm to output in a specific format
+                response = await llm.generate_str(prompt)
+            else:
+                response = await llm.generate_structured(
+                    prompt, response_model=output_type
+                )
             # print("Response generated successfully.")
-            return response
+            return response  # type: ignore This complains about the type because the type system of python cannot express this.
     except Exception as e:
         print(f"Error running agent {name}: {e}; {traceback.format_exc()}")
         return None

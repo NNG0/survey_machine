@@ -68,8 +68,6 @@ async def new_main_loop(research_question: str):
             json=status.to_dict(),
             headers={"Content-Type": "application/json"},
         )
-        # DEBUG
-        print("Response from run_single_next_step:", r.status_code, r.text)
         if r.status_code != 200:
             print(f"Error: {r.status_code} - {r.text}")
             return
@@ -105,7 +103,9 @@ if __name__ == "__main__":
         if sys.argv[-1] == "test":
             print("Running test loop.")
             asyncio.run(
-                new_main_loop("What is the impact of social media on mental health?")
+                new_main_loop(
+                    "Which sorting algorithms are used in practice, from standard libraries to personal projects?"
+                )
             )
         else:
             print("Unknown argument. Please use 'test' to run the test loop.")

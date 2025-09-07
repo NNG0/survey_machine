@@ -1,7 +1,7 @@
 import sqlite3
+import os
+import shutil
 from typing import List, Dict, Any
-from MCP.types import Article
-
 
 class PaperManager:
     """Einfacher Paper Manager für Frontend"""
@@ -20,17 +20,26 @@ class PaperManager:
                     authors TEXT,
                     abstract TEXT,
                     url TEXT,
+                    year INTEGER,
+                    file_path TEXT,
+                    original_filename TEXT,
+                    file_size INTEGER,
+                    relevance_score REAL,
+                    cluster_id INTEGER,
+                    cluster_label TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
             conn.commit()
     
-    def add_paper(self, title: str, authors: str = "", abstract: str = "", url: str = "") -> int:
+    def add_paper(self, title: str, authors: str = "", abstract: str = "", url: str = "", 
+                  year: int = None, relevance_score: float = None, cluster_id: int = None, 
+                  cluster_label: str = None) -> int:
         """Paper hinzufügen"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
-                "INSERT INTO papers (title, authors, abstract, url) VALUES (?, ?, ?, ?)",
-                (title, authors, abstract, url)
+                "INSERT INTO papers (title, authors, abstract, url, year, relevance_score, cluster_id, cluster_label) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (title, authors, abstract, url, year, relevance_score, cluster_id, cluster_label)
             )
             conn.commit()
             return cursor.lastrowid
@@ -38,19 +47,76 @@ class PaperManager:
     def delete_paper(self, paper_id: str) -> bool:
         """Paper löschen mit String-ID"""
         try:
+            # Erst PDF-Datei löschen falls vorhanden
             with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                row = conn.execute("SELECT file_path FROM papers WHERE id = ?", (int(paper_id),)).fetchone()
+                
+                if row and row["file_path"] and os.path.exists(row["file_path"]):
+                    os.remove(row["file_path"])
+                
+                # Paper aus DB löschen
                 cursor = conn.execute("DELETE FROM papers WHERE id = ?", (int(paper_id),))
                 conn.commit()
                 return cursor.rowcount > 0
-        except:
+        except Exception as e:
+            print(f"Error deleting paper: {e}")
             return False
     
     def delete_all_papers(self) -> int:
-        """Alle Papers löschen"""
+        """Alle Papers löschen (inkl. PDFs)"""
+        try:
+            # Erst alle PDF-Dateien löschen
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute("SELECT file_path FROM papers WHERE file_path IS NOT NULL").fetchall()
+                
+                for row in rows:
+                    if row["file_path"] and os.path.exists(row["file_path"]):
+                        os.remove(row["file_path"])
+                
+                # Dann alle Papers aus DB löschen
+                cursor = conn.execute("DELETE FROM papers")
+                conn.commit()
+                return cursor.rowcount
+        except Exception as e:
+            print(f"Error deleting all papers: {e}")
+            return 0
+    
+    def upload_paper_pdf(self, paper_id: int, pdf_file, original_filename: str) -> bool:
+        """PDF für ein Paper hochladen"""
+        try:
+            # Uploads-Ordner erstellen falls nicht vorhanden
+            uploads_dir = "uploads/papers"
+            os.makedirs(uploads_dir, exist_ok=True)
+            
+            # Eindeutigen Dateinamen generieren
+            unique_filename = f"{paper_id}_{original_filename}"
+            file_path = os.path.join(uploads_dir, unique_filename)
+            
+            # Datei speichern
+            shutil.copy2(pdf_file, file_path)
+            file_size = os.path.getsize(file_path)
+            
+            # DB aktualisieren
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE papers SET file_path = ?, original_filename = ?, file_size = ? WHERE id = ?",
+                    (file_path, original_filename, file_size, paper_id)
+                )
+                conn.commit()
+            
+            return True
+        except Exception as e:
+            print(f"Error uploading PDF: {e}")
+            return False
+    
+    def get_paper_file_path(self, paper_id: int) -> str:
+        """Dateipfad für ein Paper holen"""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("DELETE FROM papers")
-            conn.commit()
-            return cursor.rowcount
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT file_path FROM papers WHERE id = ?", (paper_id,)).fetchone()
+            return row["file_path"] if row and row["file_path"] else None
     
     def get_all_papers(self) -> List[Dict[str, Any]]:
         """Alle Papers für Frontend holen"""
@@ -60,17 +126,88 @@ class PaperManager:
             
             papers = []
             for row in rows:
+                # Check if PDF file exists
+                has_pdf = False
+                if row["file_path"] and os.path.exists(row["file_path"]):
+                    has_pdf = True
+                
                 papers.append({
                     "id": str(row["id"]),
                     "title": row["title"],
                     "authors": row["authors"] or "Unknown Authors",
-                    "year": 2024,
-                    "journal": "Academic Journal",
+                    "year": row["year"] or 2024,
                     "abstract": row["abstract"] or "No abstract",
-                    "relevance": 0,
-                    "tags": ["Database"],
-                    "citation": f"{row['authors'] or 'Unknown'} (2024). {row['title']}",
+                    "relevance": row["relevance_score"] or 0,
+                    "tags": [row["cluster_label"]] if row["cluster_label"] else [],
+                    "citation": f"{row['authors'] or 'Unknown'} ({row['year'] or 2024}). {row['title']}",
                     "doi": row["url"] or "",
-                    "savedAt": row["created_at"]
+                    "savedAt": row["created_at"],
+                    "file_path": row["file_path"],
+                    "original_filename": row["original_filename"],
+                    "file_size": row["file_size"],
+                    "has_pdf": has_pdf,
+                    "cluster_id": row["cluster_id"],
+                    "cluster_label": row["cluster_label"]
                 })
             return papers
+    
+    # def get_papers_by_cluster(self, cluster_id: int) -> List[Dict[str, Any]]:
+    #     """Alle Papers eines Clusters holen"""
+    #     with sqlite3.connect(self.db_path) as conn:
+    #         conn.row_factory = sqlite3.Row
+    #         rows = conn.execute(
+    #             "SELECT * FROM papers WHERE cluster_id = ? ORDER BY relevance_score DESC", 
+    #             (cluster_id,)
+    #         ).fetchall()
+            
+    #         papers = []
+    #         for row in rows:
+    #             has_pdf = False
+    #             if row["file_path"] and os.path.exists(row["file_path"]):
+    #                 has_pdf = True
+                
+    #             papers.append({
+    #                 "id": str(row["id"]),
+    #                 "title": row["title"],
+    #                 "authors": row["authors"] or "Unknown Authors",
+    #                 "year": row["year"] or 2024,
+    #                 "abstract": row["abstract"] or "No abstract",
+    #                 "relevance": row["relevance_score"] or 0,
+    #                 "tags": [row["cluster_label"]] if row["cluster_label"] else [],
+    #                 "citation": f"{row['authors'] or 'Unknown'} ({row['year'] or 2024}). {row['title']}",
+    #                 "doi": row["url"] or "",
+    #                 "savedAt": row["created_at"],
+    #                 "file_path": row["file_path"],
+    #                 "original_filename": row["original_filename"],
+    #                 "file_size": row["file_size"],
+    #                 "has_pdf": has_pdf,
+    #                 "cluster_id": row["cluster_id"],
+    #                 "cluster_label": row["cluster_label"]
+    #             })
+    #         return papers
+    
+    # def get_clusters_summary(self) -> List[Dict[str, Any]]:
+    #     """Cluster-Übersicht mit Anzahl Papers pro Cluster"""
+    #     with sqlite3.connect(self.db_path) as conn:
+    #         conn.row_factory = sqlite3.Row
+    #         rows = conn.execute("""
+    #             SELECT 
+    #                 cluster_id, 
+    #                 cluster_label, 
+    #                 COUNT(*) as paper_count,
+    #                 AVG(relevance_score) as avg_relevance
+    #             FROM papers 
+    #             WHERE cluster_id IS NOT NULL 
+    #             GROUP BY cluster_id, cluster_label
+    #             ORDER BY paper_count DESC
+    #         """).fetchall()
+            
+    #         clusters = []
+    #         for row in rows:
+    #             clusters.append({
+    #                 "cluster_id": row["cluster_id"],
+    #                 "cluster_label": row["cluster_label"],
+    #                 "paper_count": row["paper_count"],
+    #                 "avg_relevance": round(row["avg_relevance"], 3) if row["avg_relevance"] else 0
+    #             })
+    #         return clusters

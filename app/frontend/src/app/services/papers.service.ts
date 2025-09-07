@@ -30,11 +30,11 @@ export class PapersService {
   }
 
   deletePaper(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/papers/${id}`);
+    return this.http.delete(`${this.apiUrl}/papers/${id}`, { responseType: 'text' as 'json' });
   }
 
   deleteAllPapers(): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/papers`);
+    return this.http.delete(`${this.apiUrl}/papers`, { responseType: 'text' as 'json' });
   }
 
   uploadPDF(paperId: number, file: File): Observable<any> {

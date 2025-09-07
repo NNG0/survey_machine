@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PapersService, PaperCreate } from '../../services/papers.service';
+import { Router } from '@angular/router';
+import { DraftsService } from '../../services/drafts.service';
 
 interface SavedPaper {
   id: string;
@@ -29,7 +31,7 @@ interface SavedPaper {
 export class CollectionComponent implements OnInit {
   savedPapers: SavedPaper[] = [];
 
-  constructor(private papersService: PapersService) {}
+  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router) {}
 
   ngOnInit() {
     this.loadSavedPapers();
@@ -86,6 +88,20 @@ export class CollectionComponent implements OnInit {
     });
   }
 
+  removeAllPapers() {
+    const confirmed = confirm('Delete all papers from your collection? This cannot be undone.');
+    if (!confirmed) return;
+    this.papersService.deleteAllPapers().subscribe({
+      next: () => {
+        this.savedPapers = [];
+      },
+      error: (error) => {
+        console.error('Error deleting all papers:', error);
+        alert('Failed to delete all papers');
+      }
+    });
+  }
+
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files[0];
@@ -127,7 +143,8 @@ export class CollectionComponent implements OnInit {
   }
 
   startDrafting() {
-    // Placeholder: Wire this to your drafting flow later
-    alert('Drafting started with ' + this.savedPapers.length + ' papers.');
+    const title = `Draft ${new Date().toLocaleString()}`;
+    const draft = this.draftsService.create(title);
+    this.router.navigate(['/drafts', draft.id]);
   }
 }

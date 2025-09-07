@@ -33,6 +33,26 @@
   gap: 20px;
 }
 
+.list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.remove-all-btn {
+  background: #ffe6e6;
+  color: #d32f2f;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-end;
+}
+
+.remove-all-btn:hover {
+  background: #ffcccc;
+}
+
 .paper-card {
   background: white;
   border-radius: 12px;

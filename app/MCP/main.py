@@ -45,8 +45,8 @@ async def new_main_loop(research_question: str):
     status = RequestStatus(
         settings=settings,  # Testing setup
         papers=[],  # Start with an empty list of papers
-        results=[],  # Start with an empty list of results
         key_questions=[],  # Start with an empty list of key questions
+        draft=[],  # Also don't use drafts out of the box
     )  # The trace file is named with the current timestamp, so it is unique.
 
     # print(f"Initial status: {status.to_dict()}")
@@ -68,6 +68,8 @@ async def new_main_loop(research_question: str):
             json=status.to_dict(),
             headers={"Content-Type": "application/json"},
         )
+        # DEBUG
+        print("Response from run_single_next_step:", r.status_code, r.text)
         if r.status_code != 200:
             print(f"Error: {r.status_code} - {r.text}")
             return

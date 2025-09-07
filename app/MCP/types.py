@@ -35,6 +35,11 @@ class StatusSetting(BaseModel):
     )
 
 
+class DraftHeading(BaseModel):
+    title: str  # The title of the heading, together with the hashtags to denote the markdown Header level e.g. "# Introduction"
+    content: str | None  # The content of the heading, in markdown format.
+
+
 class RequestStatus(BaseModel):
     """This class is used to track the status of a single request over the lifetime of the server.
     It stores all data needed to track the request and is meant to represent the progress.
@@ -46,6 +51,10 @@ class RequestStatus(BaseModel):
 
     papers: list[Article] = Field(default_factory=list)  # The list of papers
 
+    draft: list[DraftHeading] = Field(
+        default_factory=list
+    )  # The draft headings for the final document
+
     settings: StatusSetting  # The settings for the request, such as the research question and paper limit.
     # Does not change over the lifetime of the request.
 
@@ -53,21 +62,20 @@ class RequestStatus(BaseModel):
 
     def __init__(
         self,
-        key_questions: list[str] | None = Field(
-            default_factory=list
-        ),  # TODO: is this right?
+        key_questions: list[tuple[str, list[str] | None, SurveyResult | None]]
+        | None = Field(default_factory=list),  # TODO: is this right?
         papers: list[Article] = Field(default_factory=list),
-        results: list[SurveyResult] = Field(default_factory=list),
+        draft: list[DraftHeading] = Field(default_factory=list),
         settings: StatusSetting | None = None,
     ):
         """Initializes the RequestStatus object.
         If trace_file is given, the status will be saved to that file.
         """
         super().__init__(
-            papers=papers,
             key_questions=key_questions,
-            results=results,
+            papers=papers,
             settings=settings,
+            draft=draft,
         )
 
     def pretty_print(self):
@@ -83,6 +91,8 @@ Request status:
                 {"\n\t\t".join([f"Question: {question[0]}\n\t\t\tSources: {', '.join(question[1]) if question[1] else 'None'}\n\t\t\tResult: {question[2].result if question[2] else 'None'}" for question in self.key_questions] if self.key_questions else ["None"])}
         Papers:
                 {"\n\t\t".join([f"Name: {paper.article.title}\n\t\t\tQuestions: {paper.problem_questions}\n\t\t\tMethods: {paper.methods}" for paper in self.papers])}
+        Draft:
+                {"\n\t\t".join([f"Title: {heading.title}\n\t\t\tContent: {heading.content}" for heading in self.draft])}
             """
         )  # TODO: Add a better pretty print function
 
@@ -148,6 +158,8 @@ class RequestStages(Enum):
     PARSE_PAPERS = 200
     ADJUST_KEY_QUESTIONS = 300
     EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500
+    CREATING_DRAFT_HEADINGS = 600
+    FILLING_DRAFT_CONTENT = 700
     FINISHED = 999
 
 

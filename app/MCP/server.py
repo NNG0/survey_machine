@@ -66,6 +66,7 @@ mcp_settings = MCPSettings(
     }
 )
 
+
 def get_openai_settings():
     """Create OpenAI settings with a new AsyncClient for each request."""
     is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
@@ -86,7 +87,8 @@ def get_openai_settings():
         default_model = "qwen3-32b"
         # default_model = "qwen3-235b-a22b"
     else:
-        default_model = "qwen3:0.6b"
+        # default_model = "qwen3:0.6b"
+        default_model = "qwen3:4b"
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
@@ -101,6 +103,7 @@ def get_openai_settings():
         http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
         default_model=default_model,  # type: ignore
     )
+
 
 logger = LoggerSettings(
     # level="debug",
@@ -129,7 +132,7 @@ app.add_middleware(
     allow_origins=["http://localhost:4200"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 

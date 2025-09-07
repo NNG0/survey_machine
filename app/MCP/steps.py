@@ -26,6 +26,14 @@ from .agents.relevant_literature import (
     run_all_relevant_literature_agent,
     run_single_relevant_literature_agent,
 )
+from .agents.create_draft_headings import (
+    run_all_create_draft_headings_agent,
+    run_single_create_draft_headings_agent,
+)
+from .agents.fill_draft_content import (
+    run_all_fill_draft_content_agent,
+    run_single_fill_draft_content_agent,
+)
 
 
 def next_step(
@@ -90,7 +98,7 @@ def next_step(
             RequestStages.ADJUST_KEY_QUESTIONS,
         )
 
-    # Lastly, we need to extract results from the papers.
+    # Now, we need to extract results from the papers.
     # This is stored alongside the key questions to give each a solution.
     if any(question[2] is None for question in status.key_questions):
         return (
@@ -98,6 +106,24 @@ def next_step(
             run_single_extract_results_agent,
             run_all_extract_results_agent,
             RequestStages.EXTRACT_RELEVANT_RESULTS_FROM_PAPERS,
+        )
+
+    # For the draft, first, the heading need to be created.
+    if not status.draft or len(status.draft) == 0:
+        return (
+            "Creating draft headings",
+            run_single_create_draft_headings_agent,
+            run_all_create_draft_headings_agent,
+            RequestStages.CREATING_DRAFT_HEADINGS,
+        )
+
+    # And the content of the headings needs to be filled, too.
+    if any(heading.content is None for heading in status.draft):
+        return (
+            "Filling draft heading content",
+            run_single_fill_draft_content_agent,
+            run_all_fill_draft_content_agent,
+            RequestStages.FILLING_DRAFT_CONTENT,
         )
 
     # If we reach this point, all steps are done.

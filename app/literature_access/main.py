@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
 
 
-app = FastMCP("literature_access")
+mcp = FastMCP("literature-access")
 
 load_dotenv()
 
@@ -16,7 +16,7 @@ OPEN_ALEX_BASE_URL = "https://api.openalex.org/works?"
 #     return {"message": OPEN_ALEX_MAIL}
 
 
-@app.tool()
+@mcp.tool()
 async def works():
     params = {"mailto": OPEN_ALEX_MAIL}
 
@@ -37,7 +37,7 @@ async def works():
     return {"meta": data.get("meta")}
 
 
-@app.tool()
+@mcp.tool()
 async def search_openalex(q: str):
     params = {"search": q, "per_page": 5}
 
@@ -63,7 +63,7 @@ async def search_openalex(q: str):
     return {"query": q, "results": relevant_data}
 
 
-@app.tool()
+@mcp.tool()
 async def get_openalex_by_id(id: str):
     params = {"per_page": 5}
 
@@ -132,3 +132,13 @@ async def get_abstract_from_crossref(doi: str) -> str | None:
     data = response.json()
     abstract = data.get("message", {}).get("abstract", "")
     return abstract if abstract else None
+
+
+if __name__ == "__main__":
+    print("Starting Literature Access service...", flush=True)
+    # mcp.run(transport="streamable-http")
+    import uvicorn
+
+    uvicorn.run(mcp.streamable_http_app, host="0.0.0.0", port=8000)
+else:
+    print("DEBUG: Not running as main module.", flush=True)

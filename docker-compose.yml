@@ -35,8 +35,8 @@ services:
       context: .
     container_name: literature_access
     ports:
-      - "8000:8000"
-    command: fastapi run literature_access/main.py --port 8000 # TODO: fix; this needs to properly spawn an MCP server
+      - "8000:8000" # Note: Ideally, this wouldn't be done and the service would be accessed via the internal network.
+    command: python -m literature_access.main --port 8000
 
 # Necessary for the ollama container to work
 networks:

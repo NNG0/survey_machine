@@ -48,7 +48,7 @@ async def run_single_parse_papers_agent(
         name="parse_paper",
         prompt=prompt,
         output_type=ParsedPaper,
-        server_list=["google_scholar"],
+        server_list=["literature_access", "fetch"],
     )
 
     if response is not None and isinstance(response, ParsedPaper):

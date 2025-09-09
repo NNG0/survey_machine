@@ -54,6 +54,7 @@ async def run_all_create_draft_headings_agent(
     """
 
     # TODO: rework the sections the agent is told to use
+    # Also maybe give the agent the ability to read the relevant papers? That would be quite hard to do right though.
 
     response = await run_basic_ollama_agent(
         name="create_draft_headings",

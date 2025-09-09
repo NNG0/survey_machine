@@ -37,7 +37,7 @@ async def run_single_extract_results_agent(
         name="extract_results",
         prompt=prompt,
         output_type=SurveyResult,
-        server_list=["google_scholar"],
+        server_list=["literature_access", "fetch"],
     )
 
     if response is not None and isinstance(response, SurveyResult):

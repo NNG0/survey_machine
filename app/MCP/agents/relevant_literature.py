@@ -13,14 +13,14 @@ async def run_relevant_literature_agent(
 
     prompt = f"""
     You are a research assistant. Given a research question, you need to find relevant literature.
-    You have access to Google Scholar to look up papers. For the research question, find the most relevant papers and return a list of articles with their title, abstract, author and URL.
+    You have access to OpenAlex to look up papers. For the research question, find the most relevant papers and return a list of articles with their title, abstract, author and URL.
     Limit the number of articles to {paper_limit}.
     research question: {research_question}"""  # TODO: Add examples on how to do this, multi-shot learning is important
 
     return await run_basic_ollama_agent(
         name="relevant_literature_agent",
         prompt=prompt,
-        server_list=["google_scholar"],
+        server_list=["literature_access", "fetch"],
         output_type=list[RawArticle],
         custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )

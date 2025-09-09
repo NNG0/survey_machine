@@ -52,6 +52,13 @@ from .agents.parse_papers import (
 # A simple server that runs the MCP agents.
 # Basically, it will support the `steps.py` file and the `agents` folder.
 
+literature_access_url = (
+    "http://localhost:8000/mcp"  # The URL of the literature access server
+)
+if os.getenv("AM_I_IN_DOCKER", "false") == "true":
+    literature_access_url = (
+        "http://literature-access:8000/mcp"  # Access over the shared network
+    )
 
 mcp_settings = MCPSettings(
     servers={
@@ -59,9 +66,9 @@ mcp_settings = MCPSettings(
             command="uvx",
             args=["mcp-server-fetch"],
         ),
-        "google_scholar": MCPServerSettings(
-            command="uvx",
-            args=["google-scholar-mcp-server"],
+        "literature_access": MCPServerSettings(
+            transport="streamable_http",
+            url=literature_access_url,
         ),
     }
 )

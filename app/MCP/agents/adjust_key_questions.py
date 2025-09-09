@@ -48,7 +48,7 @@ async def run_single_adjust_questions_agent(
         name="adjust_questions",
         prompt=prompt,
         output_type=list[str],
-        server_list=["google_scholar"],
+        server_list=["literature_access", "fetch"],
     )
 
     if response is not None and isinstance(response, list) and len(response) > 0:

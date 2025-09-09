@@ -112,6 +112,7 @@ async def relevant_data_from_response(data):
         "subfield": data.get("primary_topic", dict())
         .get("subfield", dict())
         .get("display_name", ""),
+        "pdf_url": data.get("best_oa_location", dict()).get("pdf_url", ""),
         # OpenAlex also has the concepts list, should we include that as well?
         # Same with referenced or related works.
     }

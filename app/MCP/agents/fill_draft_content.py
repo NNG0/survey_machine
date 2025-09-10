@@ -1,5 +1,5 @@
 from .base import run_basic_ollama_agent
-from ..types import RequestStatus, StepInformation
+from ..types import KeyQuestion, RequestStatus, StepInformation
 
 
 async def run_single_fill_draft_content_agent(
@@ -26,17 +26,17 @@ async def run_single_fill_draft_content_agent(
     # adjusted by the user manually.
     key_qs = []
     try:
-        key_qs = [q[0] for q in (status.key_questions or [])]
+        # In order for the draft content agent to work well, it will need a lot of context, so we'll give it the full
+        # key questions, that is, both the question, the references and the results
+        key_qs = [format_key_question(q) for q in (status.key_questions or [])]
     except Exception:
         key_qs = []
-    key_qs_str = "\n".join([f"- {q}" for q in key_qs]) if key_qs else "(none)"
+    key_qs_str = "\n\n".join([f"{q}" for q in key_qs]) if key_qs else "(none)"
 
     prior_sections_md = "\n\n".join(
-        [f"{h.title}" for h in status.draft[:next_idx] if h.content]
-        # [f"{h.title}\n\n{h.content}" for h in status.draft[:next_idx] if h.content]
-    )  # TODO: Is this a good idea? This is probably too much context for the LLM.
-    # I'll disable it for now, but that also means that the content might be repeated.
-    # Depending on the LLM, we might want to enable this after some testing.
+        [f"{h.title}\n{h.content}" for h in status.draft[:next_idx] if h.content]
+    )
+    # I've added the content back in, it was repeating itself too much across sections.
 
     prompt = f"""
     You are drafting a literature review section. Write the full markdown content for the given heading.
@@ -55,9 +55,10 @@ async def run_single_fill_draft_content_agent(
 
     Requirements:
     - Output markdown content only, no JSON, no backticks.
-    - Be concise but substantive (150-300 words for top-level, 80-200 for subsections).
-    - Use markdown urls for citation: [Author, Year](http://example.com) if needed; do not fabricate URLs.
+    - Be concise but substantive (450-800 words for top-level, 200-400 for subsections).
+    - Use markdown urls for citation (Structure: [Author, Year](URL)) if needed; do not fabricate URLs.
     - Keep tone academic and neutral.
+    - Only use the papers that are listed in the key questions references.
     """
 
     response = await run_basic_ollama_agent(
@@ -121,3 +122,10 @@ async def run_all_fill_draft_content_agent(
                 tries_at_this_index = 0
 
     return status, step_info
+
+
+def format_key_question(q: KeyQuestion) -> str:
+    # We give the agent the actual key question, the references and the results
+    question, references, result = q
+    references_str = "\n".join([f"- {ref}" for ref in (references or [])])
+    return f"Question: {question}\nReferences:\n{references_str}\nResult: {result.result if result else 'None'}"

@@ -8,6 +8,7 @@ from mcp_agent.workflows.llm.augmented_llm_ollama import OllamaAugmentedLLM
 
 from ..types import SupportedProviders
 
+import re
 import traceback
 
 T = TypeVar("T")
@@ -46,6 +47,9 @@ async def run_basic_ollama_agent(
             if output_type is str:
                 # The output type is string, don't force the llm to output in a specific format
                 response = await llm.generate_str(prompt)
+                if isinstance(response, str):
+                    # We need to post-process the response, as it could contain <think> tags.
+                    response = post_process_response_string(response)
             else:
                 response = await llm.generate_structured(
                     prompt, response_model=output_type
@@ -55,3 +59,10 @@ async def run_basic_ollama_agent(
     except Exception as e:
         print(f"Error running agent {name}: {e}; {traceback.format_exc()}")
         return None
+
+
+def post_process_response_string(response: str) -> str:
+    """Post-process the response string to remove any <think> tags and their content."""
+    # Remove <think>...</think> tags and their content
+    cleaned_response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
+    return cleaned_response.strip()

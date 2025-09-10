@@ -40,13 +40,16 @@ class DraftHeading(BaseModel):
     content: str | None  # The content of the heading, in markdown format.
 
 
+type KeyQuestion = tuple[str, list[str] | None, SurveyResult | None]
+
+
 class RequestStatus(BaseModel):
     """This class is used to track the status of a single request over the lifetime of the server.
     It stores all data needed to track the request and is meant to represent the progress.
     It can also be stored and loaded due to this."""
 
-    key_questions: list[tuple[str, list[str] | None, SurveyResult | None]] | None = (
-        Field(default_factory=list)
+    key_questions: list[KeyQuestion] | None = Field(
+        default_factory=list
     )  # Each question may or may not be assigned a url to one or more papers.
 
     papers: list[Article] = Field(default_factory=list)  # The list of papers

@@ -51,7 +51,15 @@ async def run_single_parse_papers_agent(
         server_list=["literature_access", "fetch"],
     )
 
-    if response is not None and isinstance(response, ParsedPaper):
+    if response == (True,):
+        step_info.add_error(
+            f"Rate limit exceeded while parsing paper at index {paper_index}."
+        )
+    elif response == (False,):
+        step_info.add_error(
+            f"Failed to parse paper at index {paper_index} due to an unknown error."
+        )
+    elif response is not None and isinstance(response, ParsedPaper):
         paper_to_parse.problem_questions = response.problem_questions
         paper_to_parse.methods = response.methods
         request_status.papers[paper_index] = paper_to_parse

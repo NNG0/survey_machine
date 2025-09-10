@@ -35,8 +35,8 @@ async def new_main_loop(research_question: str):
 
     settings = StatusSetting(
         research_question=research_question,
-        paper_limit=2,  # For testing, we limit the number of papers.
-        num_key_questions=2,  # Also for testing
+        paper_limit=10,
+        num_key_questions=5,
     )
 
     status = RequestStatus(
@@ -79,6 +79,13 @@ async def new_main_loop(research_question: str):
         print("Current status:")
         status.pretty_print()  # Print the current status
         step_info.print_warnings_and_errors()
+
+        # If a rate limit was hit, wait for one minute.
+        if step_info.errors and any(
+            "Rate limit" in error for error in step_info.errors
+        ):
+            print("Rate limit hit, waiting for one minute...")
+            await asyncio.sleep(60)
 
         # Get the next step
         stage = requests.post(

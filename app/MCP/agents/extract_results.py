@@ -29,6 +29,7 @@ async def run_single_extract_results_agent(
     # We can now ask the model to extract the result from the papers.
     prompt = f"""
     You are a research assistant. Given a key question for a survey paper, Write a summary of the findings from the papers as the result.
+    It should be informative, but concise. Use a maximum of 300 words.
     Key question: {question[0]}
     Papers: {request_status.papers}
     """
@@ -40,7 +41,13 @@ async def run_single_extract_results_agent(
         server_list=["literature_access", "fetch"],
     )
 
-    if response is not None and isinstance(response, SurveyResult):
+    if response == (True,):
+        step_info.add_error("Rate limit exceeded while extracting results.")
+    elif response == (False,):
+        step_info.add_error(
+            f"Failed to extract result for question at index {question_index} due to an unknown error."
+        )
+    elif response is not None and isinstance(response, SurveyResult):
         question = (question[0], question[1], response)
         request_status.key_questions[question_index] = question
     elif isinstance(response, Exception):

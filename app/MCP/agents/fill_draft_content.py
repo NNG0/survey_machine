@@ -68,7 +68,17 @@ async def run_single_fill_draft_content_agent(
         output_type=str,
     )
 
-    if isinstance(response, Exception):
+    if response == (True,):
+        step_info.add_error(
+            f"Rate limit exceeded while filling content for heading '{heading.title}'."
+        )
+        return status, step_info
+    elif response == (False,):
+        step_info.add_error(
+            f"Failed to fill content for heading '{heading.title}' due to an unknown error."
+        )
+        return status, step_info
+    elif isinstance(response, Exception):
         step_info.add_error(
             f"Error filling content for heading '{heading.title}': {response}"
         )

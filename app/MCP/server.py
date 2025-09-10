@@ -91,8 +91,9 @@ def get_openai_settings():
     gwdg_api_key = os.getenv("GWDG_API_KEY")
     if gwdg_api_key:
         base_url = "https://chat-ai.academiccloud.de/v1"
-        default_model = "qwen3-32b"
-        # default_model = "qwen3-235b-a22b"
+        # default_model = "qwen3-32b"
+        default_model = "qwq-32b"
+        # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
     else:
         # default_model = "qwen3:0.6b"
         default_model = "qwen3:4b"

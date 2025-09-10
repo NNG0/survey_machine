@@ -63,7 +63,13 @@ async def run_all_create_draft_headings_agent(
         output_type=list[str],
     )
 
-    if isinstance(response, Exception):
+    if response == (True,):
+        step_info.add_error("Rate limit exceeded while creating draft headings.")
+        return status, step_info
+    elif response == (False,):
+        step_info.add_error("Failed to create draft headings due to an unknown error.")
+        return status, step_info
+    elif isinstance(response, Exception):
         step_info.add_error(f"Error creating draft headings: {response}")
         return status, step_info
 

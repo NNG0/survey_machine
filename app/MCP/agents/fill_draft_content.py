@@ -56,7 +56,7 @@ async def run_single_fill_draft_content_agent(
     Requirements:
     - Output markdown content only, no JSON, no backticks.
     - Be concise but substantive (450-800 words for top-level, 200-400 for subsections).
-    - Use markdown urls for citation (Structure: [Author, Year](URL)) if needed; do not fabricate URLs.
+    - Use markdown urls for citation (Structure: [Author, Year](URL)) if needed. If the URL does not occur in the list of URLs from the papers, verify that it is actually correct.
     - Keep tone academic and neutral.
     - Only use the papers that are listed in the key questions references.
     """

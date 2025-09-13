@@ -47,7 +47,7 @@ export class AppComponent {
     console.log("RequestStatus:", requestStatus);
     console.log("Search filters:", searchData.filters);
 
-    this.restApiService.runSingleNextStep(requestStatus).subscribe({
+    this.restApiService.runAllCreateKeyQuestions(requestStatus).subscribe({
       next: ([updatedStatus, info]) => {
         console.log("Updated status: ", updatedStatus);
         console.log("Info: ", info);

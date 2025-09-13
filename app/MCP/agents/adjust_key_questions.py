@@ -1,3 +1,4 @@
+from typing import Tuple
 from .base import run_basic_ollama_agent
 from ..types import RequestStatus, StepInformation
 
@@ -48,7 +49,7 @@ async def run_single_adjust_questions_agent(
         name="adjust_questions",
         prompt=prompt,
         output_type=list[str],
-        server_list=["google_scholar"],
+        server_list=["literature_access", "fetch"],
     )
 
     if response is not None and isinstance(response, list) and len(response) > 0:
@@ -58,6 +59,11 @@ async def run_single_adjust_questions_agent(
         step_info.add_error(
             f"Failed to adjust question at index {question_index}: {response}"
         )
+    elif isinstance(response, Tuple):
+        if response[0]:
+            step_info.add_error("Rate limit exceeded while adjusting question.")
+        else:
+            step_info.add_error("Failed to adjust question due to an unknown error.")
     else:
         step_info.add_warning("Failed to add URL to question.")
         print(f"Wrong Response type: {response}")

@@ -28,7 +28,18 @@ async def run_all_create_key_questions_agent(
         server_list=[],
         output_type=list[str],
     )
-    if isinstance(key_questions, Exception):
+    # if key_questions == (True,):
+    #     step_info.add_error("Rate limit exceeded while creating key questions.")
+    # elif key_questions == (False,):
+    #     step_info.add_error("Failed to create key questions due to an unknown error.")
+    if isinstance(key_questions, tuple):
+        if key_questions[0]:
+            step_info.add_error("Rate limit exceeded while creating key questions.")
+        else:
+            step_info.add_error(
+                "Failed to create key questions due to an unknown error."
+            )
+    elif isinstance(key_questions, Exception):
         step_info.add_error(f"Error creating key questions: {key_questions}")
     elif key_questions:
         status.key_questions = [

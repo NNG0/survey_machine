@@ -52,6 +52,13 @@ from .agents.parse_papers import (
 # A simple server that runs the MCP agents.
 # Basically, it will support the `steps.py` file and the `agents` folder.
 
+literature_access_url = (
+    "http://localhost:8000/mcp"  # The URL of the literature access server
+)
+if os.getenv("AM_I_IN_DOCKER", "false") == "true":
+    literature_access_url = (
+        "http://literature-access:8000/mcp"  # Access over the shared network
+    )
 
 mcp_settings = MCPSettings(
     servers={
@@ -59,12 +66,13 @@ mcp_settings = MCPSettings(
             command="uvx",
             args=["mcp-server-fetch"],
         ),
-        "google_scholar": MCPServerSettings(
-            command="uvx",
-            args=["google-scholar-mcp-server"],
+        "literature_access": MCPServerSettings(
+            transport="streamable_http",
+            url=literature_access_url,
         ),
     }
 )
+
 
 def get_openai_settings():
     """Create OpenAI settings with a new AsyncClient for each request."""
@@ -83,10 +91,12 @@ def get_openai_settings():
     gwdg_api_key = os.getenv("GWDG_API_KEY")
     if gwdg_api_key:
         base_url = "https://chat-ai.academiccloud.de/v1"
-        default_model = "qwen3-32b"
-        # default_model = "qwen3-235b-a22b"
+        # default_model = "qwen3-32b"
+        default_model = "qwq-32b"
+        # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
     else:
-        default_model = "qwen3:0.6b"
+        # default_model = "qwen3:0.6b"
+        default_model = "qwen3:4b"
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
@@ -101,6 +111,7 @@ def get_openai_settings():
         http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
         default_model=default_model,  # type: ignore
     )
+
 
 logger = LoggerSettings(
     # level="debug",
@@ -129,7 +140,7 @@ app.add_middleware(
     allow_origins=["http://localhost:4200"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 

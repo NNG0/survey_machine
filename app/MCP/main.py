@@ -29,24 +29,21 @@ from .types import RequestStages, RequestStatus, StepInformation, StatusSetting
 # TODO: Do we use additional memory for the agents?
 
 
-# TODO: add the output agents
-
-
 async def new_main_loop(research_question: str):
     """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
     This time, while it still uses the stepping system, it runs the agents on the hosted server."""
 
     settings = StatusSetting(
         research_question=research_question,
-        paper_limit=2,  # For testing, we limit the number of papers.
-        num_key_questions=2,  # Also for testing
+        paper_limit=10,
+        num_key_questions=5,
     )
 
     status = RequestStatus(
         settings=settings,  # Testing setup
         papers=[],  # Start with an empty list of papers
-        results=[],  # Start with an empty list of results
         key_questions=[],  # Start with an empty list of key questions
+        draft=[],  # Also don't use drafts out of the box
     )  # The trace file is named with the current timestamp, so it is unique.
 
     # print(f"Initial status: {status.to_dict()}")
@@ -83,6 +80,13 @@ async def new_main_loop(research_question: str):
         status.pretty_print()  # Print the current status
         step_info.print_warnings_and_errors()
 
+        # If a rate limit was hit, wait for one minute.
+        if step_info.errors and any(
+            "Rate limit" in error for error in step_info.errors
+        ):
+            print("Rate limit hit, waiting for one minute...")
+            await asyncio.sleep(60)
+
         # Get the next step
         stage = requests.post(
             "http://localhost:8001/next_step",
@@ -103,7 +107,9 @@ if __name__ == "__main__":
         if sys.argv[-1] == "test":
             print("Running test loop.")
             asyncio.run(
-                new_main_loop("What is the impact of social media on mental health?")
+                new_main_loop(
+                    "Which sorting algorithms are used in practice, from standard libraries to personal projects?"
+                )
             )
         else:
             print("Unknown argument. Please use 'test' to run the test loop.")

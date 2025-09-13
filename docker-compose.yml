@@ -11,7 +11,7 @@ services:
     networks:
       survey-machine:
         # 10.89.0.2
-        ipv4_address: 10.89.0.2
+        # ipv4_address: 10.89.0.2
   ollama:
     image: ollama/ollama
     container_name: ollama-instance
@@ -21,7 +21,7 @@ services:
     networks:
       survey-machine:
         # 10.89.0.3
-        ipv4_address: 10.89.0.3
+        # ipv4_address: 10.89.0.3
     # Optional GPU support
     # deploy:
     #   resources:
@@ -34,16 +34,15 @@ services:
     build:
       context: .
     container_name: literature_access
+    hostname: literature_access
     ports:
-      - "8000:8000"
-    command: fastapi run literature_access/main.py --port 8000
+      - "8000:8000" # Note: Ideally, this wouldn't be done and the service would be accessed via the internal network.
+    command: python -m literature_access.main --port 8000
+    networks:
+      survey-machine:
 
 # Necessary for the ollama container to work
 networks:
   survey-machine:
     driver: bridge
     # network_backend: netavark
-    ipam:
-      config:
-        - subnet: 10.89.0.0/16
-          gateway: 10.89.0.1

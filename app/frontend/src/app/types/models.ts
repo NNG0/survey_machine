@@ -21,10 +21,17 @@ export interface StatusSetting {
   num_key_questions: number; // Defaults to 5 in backend
 }
 
+export interface DraftHeading {
+  title: string;
+  content: string | null;
+}
+
+export type KeyQuestion = [string, string[] | null, SurveyResult | null];
+
 export interface RequestStatus {
   key_questions: [string, string[] | null, SurveyResult | null][];
   papers: [Article, number | null][];
-  results: SurveyResult[];
+  draft: DraftHeading[];
   settings: StatusSetting;
 }
 
@@ -39,5 +46,7 @@ export enum RequestStages {
   PARSE_PAPERS = 200,
   ADJUST_KEY_QUESTIONS = 300,
   EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500,
+  CREATING_DRAFT_HEADINGS = 600,
+  FILLING_DRAFT_CONTENT = 700,
   FINISHED = 999,
 }

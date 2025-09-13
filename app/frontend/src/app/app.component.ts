@@ -38,7 +38,7 @@ export class AppComponent {
         paper_limit: 0,
         num_key_questions: 0,
       },
-      results: [],
+      draft: [],
     };
     this.showResults = true;
     this.showTopics = true;

@@ -167,7 +167,7 @@ async def next_step_endpoint(
     )
 
 
-@app.get("/run_single_stage")
+@app.post("/run_single_stage")
 async def run_single_stage_endpoint(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -182,7 +182,7 @@ async def run_single_stage_endpoint(
         return request_status, step_info
 
 
-@app.get("/run_until_before_stage")
+@app.post("/run_until_before_stage")
 async def run_until_before_stage_endpoint(
     request_status: RequestStatus,
     stage: RequestStages,  # The stage to run until before
@@ -201,7 +201,7 @@ async def run_until_before_stage_endpoint(
 # Now, all individual agent steps are defined here.
 
 
-@app.get("/run_single_relevant_literature")
+@app.post("/run_single_relevant_literature")
 async def run_single_relevant_literature(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -218,7 +218,7 @@ async def run_single_relevant_literature(
         return request_status, step_info
 
 
-@app.get("/run_all_relevant_literature")
+@app.post("/run_all_relevant_literature")
 async def run_all_relevant_literature(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -235,7 +235,7 @@ async def run_all_relevant_literature(
         return request_status, step_info
 
 
-@app.get("/run_single_adjust_questions")
+@app.post("/run_single_adjust_questions")
 async def run_single_adjust_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -252,7 +252,7 @@ async def run_single_adjust_questions(
         return request_status, step_info
 
 
-@app.get("/run_all_adjust_questions")
+@app.post("/run_all_adjust_questions")
 async def run_all_adjust_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -267,7 +267,7 @@ async def run_all_adjust_questions(
         return request_status, step_info
 
 
-@app.get("/run_single_create_key_questions")
+@app.post("/run_single_create_key_questions")
 async def run_single_create_key_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -284,7 +284,7 @@ async def run_single_create_key_questions(
         return request_status, step_info
 
 
-@app.get("/run_all_create_key_questions")
+@app.post("/run_all_create_key_questions")
 async def run_all_create_key_questions(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -301,7 +301,7 @@ async def run_all_create_key_questions(
         return request_status, step_info
 
 
-@app.get("/run_single_extract_results")
+@app.post("/run_single_extract_results")
 async def run_single_extract_results(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -318,7 +318,7 @@ async def run_single_extract_results(
         return request_status, step_info
 
 
-@app.get("/run_all_extract_results")
+@app.post("/run_all_extract_results")
 async def run_all_extract_results(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -333,7 +333,7 @@ async def run_all_extract_results(
         return request_status, step_info
 
 
-@app.get("/run_single_parse_papers")
+@app.post("/run_single_parse_papers")
 async def run_single_parse_papers(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:
@@ -348,7 +348,7 @@ async def run_single_parse_papers(
         return request_status, step_info
 
 
-@app.get("/run_all_parse_papers")
+@app.post("/run_all_parse_papers")
 async def run_all_parse_papers(
     request_status: RequestStatus,
 ) -> tuple[RequestStatus, StepInformation]:

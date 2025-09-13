@@ -6,3 +6,5 @@ mcp[cli]
 # API backend
 fastapi[standard]
 python-dotenv
+openai
+instructor

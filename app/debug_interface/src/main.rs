@@ -1,6 +1,15 @@
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
+use crate::types::{NextStepResponse, RequestStages, RunNextStepResponse, get_testing_status};
+
+mod gui;
+mod types;
+
 fn main() {
+    env_logger::init();
+    // test_standard_run();
+    gui::run_gui();
+}
+
+fn test_standard_run() {
     // Create the initial testing status
     let mut status = get_testing_status();
 
@@ -81,90 +90,4 @@ fn main() {
     }
     println!("Finished with status: {status:#?}");
     println!("Last next step response: {next_step:?}");
-}
-
-// Types from python
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RawArticle {
-    title: Option<String>,
-    author: Option<String>,
-    #[serde(rename = "abstract")]
-    abstract_: Option<String>,
-    url: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Article {
-    article: RawArticle,
-    problem_questions: Option<Vec<String>>,
-    methods: Option<Vec<String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct SurveyResult {
-    result: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct StatusSetting {
-    research_question: String,
-    paper_limit: i32, // Should technically be u32, but if something weird happens in the database, this shouldn't just fail.
-    num_key_questions: i32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct DraftHeading {
-    heading: String,
-    content: Option<String>,
-}
-
-type KeyQuestion = (String, Option<Vec<String>>, Option<SurveyResult>); // (question, related methods, survey result)
-#[derive(Serialize, Deserialize, Debug)]
-struct RequestStatus {
-    key_questions: Option<Vec<KeyQuestion>>,
-    papers: Vec<Article>,
-    draft: Vec<DraftHeading>,
-    settings: StatusSetting,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct StepInformation {
-    warnings: Vec<String>,
-    errors: Vec<String>,
-}
-
-#[derive(Serialize_repr, Deserialize_repr, Debug)]
-#[repr(i32)]
-enum RequestStages {
-    CREATING_KEY_QUESTIONS = 50,
-    FINDING_LITERATURE = 100,
-    PARSE_PAPERS = 200,
-    ADJUST_KEY_QUESTIONS = 300,
-    EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500,
-    CREATING_DRAFT_HEADINGS = 600,
-    FILLING_DRAFT_CONTENT = 700,
-    FINISHED = 999,
-}
-
-type NextStepResponse = (String, String, String, RequestStages); // Human message, function name to call for single next step, function name for all remaining steps of this stage, current stage
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RunNextStepResponse(RequestStatus, StepInformation); // Updated status, information about the step
-
-fn get_testing_settings() -> StatusSetting {
-    StatusSetting {
-        research_question: "Which sorting algorithms are used in practice, from standard libraries to personal projects?".to_string(),
-        paper_limit: 2,
-        num_key_questions: 2,
-    }
-}
-
-fn get_testing_status() -> RequestStatus {
-    RequestStatus {
-        settings: get_testing_settings(),
-        papers: vec![],
-        key_questions: Some(vec![]),
-        draft: vec![],
-    }
 }

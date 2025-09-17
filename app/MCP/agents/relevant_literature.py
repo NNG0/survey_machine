@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Optional, Tuple
 from .base import run_basic_ollama_agent
-from MCP.types import Article, RequestStatus, StepInformation, OpenRouter
+from ..types import Article, RawArticle, RequestStatus, StepInformation, OpenRouter
 
 
 async def run_relevant_literature_agent(
     research_question: str, paper_limit: int
-) -> Optional[list[Article]]:
+) -> Tuple[Optional[list[RawArticle]], StepInformation]:
     """This agent receives the research question and returns a list of relevant literature in the proper format."""
 
     # DEBUG
@@ -13,17 +13,44 @@ async def run_relevant_literature_agent(
 
     prompt = f"""
     You are a research assistant. Given a research question, you need to find relevant literature.
-    You have access to Google Scholar to look up papers. For the research question, find the most relevant papers and return a list of articles with their title, abstract, author and URL.
+    You have access to OpenAlex to look up papers. For the research question, find the most relevant papers and return a list of articles with their title, abstract, author and URL.
     Limit the number of articles to {paper_limit}.
     research question: {research_question}"""  # TODO: Add examples on how to do this, multi-shot learning is important
 
-    return await run_basic_ollama_agent(
+    response = await run_basic_ollama_agent(
         name="relevant_literature_agent",
         prompt=prompt,
-        server_list=["google_scholar"],
-        output_type=list[Article],
+        server_list=["literature_access", "fetch"],
+        output_type=list[RawArticle],
         custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
+    # if response == (True,):
+    #     return (True,)
+    # elif response == (False,):
+    #     return (False,)
+    # else:
+    #     return response
+
+    step_info = StepInformation()
+
+    if response is None:
+        step_info.add_error("No response from relevant literature agent.")
+    elif isinstance(response, Exception):
+        step_info.add_error(f"Error from relevant literature agent: {response}")
+    elif response == (True,):
+        step_info.add_error("Rate limit exceeded while fetching relevant literature.")
+    elif response == (False,):
+        step_info.add_error(
+            "Failed to fetch relevant literature due to an unknown error."
+        )
+    elif isinstance(response, list) and all(
+        isinstance(article, RawArticle) for article in response
+    ):
+        return response, step_info
+    else:
+        step_info.add_warning("Unexpected response from relevant literature agent.")
+
+    return None, step_info
 
 
 async def run_single_relevant_literature_agent(
@@ -41,12 +68,22 @@ async def run_single_relevant_literature_agent(
         return request_status, step_info
 
     # Run the agent to find relevant literature.
-    articles = await run_relevant_literature_agent(
+    articles, other_step_info = await run_relevant_literature_agent(
         request_status.settings.research_question, request_status.settings.paper_limit
     )
+    step_info.merge(other_step_info)
 
-    if articles is not None and isinstance(articles, list):
-        request_status.papers = [(article, None) for article in articles]
+    if (
+        articles is not None
+        and isinstance(articles, list)
+        and len(articles) > 0
+        and all(isinstance(article, RawArticle) for article in articles)
+    ):
+        # request_status.papers = articles
+        request_status.papers = [
+            Article(article=article, methods=None, problem_questions=None)
+            for article in articles
+        ]
     elif isinstance(articles, Exception):
         step_info.add_error(f"Error finding relevant literature: {articles}")
     else:

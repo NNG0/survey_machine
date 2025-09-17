@@ -3,7 +3,7 @@ import asyncio
 import requests
 
 
-from MCP.types import RequestStages, RequestStatus, StepInformation, StatusSetting
+from .types import RequestStages, RequestStatus, StepInformation, StatusSetting
 
 
 # Drafting the structure:
@@ -29,25 +29,26 @@ from MCP.types import RequestStages, RequestStatus, StepInformation, StatusSetti
 # TODO: Do we use additional memory for the agents?
 
 
-# TODO: add the output agents
-
-
 async def new_main_loop(research_question: str):
     """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
     This time, while it still uses the stepping system, it runs the agents on the hosted server."""
 
     settings = StatusSetting(
         research_question=research_question,
-        paper_limit=2,  # For testing, we limit the number of papers to 2.
+        paper_limit=10,
+        num_key_questions=5,
     )
 
     status = RequestStatus(
-        settings=settings  # For testing, we limit the number of papers to 2.
+        settings=settings,  # Testing setup
+        papers=[],  # Start with an empty list of papers
+        key_questions=[],  # Start with an empty list of key questions
+        draft=[],  # Also don't use drafts out of the box
     )  # The trace file is named with the current timestamp, so it is unique.
 
     # print(f"Initial status: {status.to_dict()}")
 
-    stage = requests.get(
+    stage = requests.post(
         "http://localhost:8001/next_step",
         json=status.to_dict(),
     )
@@ -59,7 +60,7 @@ async def new_main_loop(research_question: str):
     ):
         response = stage.json()
         print(response[0])  # Print the human-readable message:
-        r = requests.get(
+        r = requests.post(
             "http://localhost:8001/run_single_next_step",  # Try to run the next step
             json=status.to_dict(),
             headers={"Content-Type": "application/json"},
@@ -70,16 +71,24 @@ async def new_main_loop(research_question: str):
         response = r.json()
 
         # Debug?
-        print(f"Response: {response}")
+        # print(f"Response: {response}")
 
         status = RequestStatus(**response[0])
         step_info = StepInformation(**response[1])
 
-        print(f"Current status: {status}")
+        print("Current status:")
+        status.pretty_print()  # Print the current status
         step_info.print_warnings_and_errors()
 
+        # If a rate limit was hit, wait for one minute.
+        if step_info.errors and any(
+            "Rate limit" in error for error in step_info.errors
+        ):
+            print("Rate limit hit, waiting for one minute...")
+            await asyncio.sleep(60)
+
         # Get the next step
-        stage = requests.get(
+        stage = requests.post(
             "http://localhost:8001/next_step",
             json=status.to_dict(),
         )
@@ -96,6 +105,11 @@ if __name__ == "__main__":
     else:
         # Else, we expect that something happened, for example, a test run.
         if sys.argv[-1] == "test":
+            print("Running test loop.")
             asyncio.run(
-                new_main_loop("What is the impact of social media on mental health?")
+                new_main_loop(
+                    "Which sorting algorithms are used in practice, from standard libraries to personal projects?"
+                )
             )
+        else:
+            print("Unknown argument. Please use 'test' to run the test loop.")

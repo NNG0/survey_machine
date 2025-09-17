@@ -1,40 +1,28 @@
-<<<<<<< HEAD
 from enum import Enum
-from typing import Literal, Optional, Self
+from typing import Self
 
 from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
-=======
-import asyncio
-from enum import Enum
-import time
-from typing import Awaitable, Callable, Literal, Optional, Self, TypeVar
-
->>>>>>> origin/frontend
 from pydantic import BaseModel, Field
 
 
-# Try to get it to create an article
-class Article(BaseModel):
+class RawArticle(BaseModel):
     title: str | None
     author: str | None
     abstract: str | None
     url: str | None
 
 
-class SurveyQuestion(BaseModel):
-    question: str
-    answer_type: (
-        (
-            Literal["Text"]
-            | Literal["Multiple choice"]
-            | Literal["Yes/No"]
-            | Literal["Range"]
-        )
-        | None
-    )  # The type of answer the questioned person can give. For example, "text", "multiple choice", "yes/no" or a "out of a range from x to y...". # TODO: Add more types of answers?
-    options: (
-        (list[str] | tuple[int, int] | Literal["Text field"]) | None
-    )  # The options for the answer, if applicable. For example, ["yes", "no"] for a yes/no question.
+class Article(BaseModel):
+    article: RawArticle
+    # key_findings: list[str] | None
+    problem_questions: list[str] | None
+    methods: list[str] | None
+
+
+class SurveyResult(BaseModel):
+    result: str  # The result of a paper, shortly summarized
+    # paper_url: str  # The URL of the paper the result is based on
+    # The URLs are now part of the question.
 
 
 class StatusSetting(BaseModel):
@@ -42,9 +30,17 @@ class StatusSetting(BaseModel):
     paper_limit: int = (
         5  # The maximum number of papers to use for the survey. Defaults to 5.
     )
-    question_per_article: int = (
-        3  # The number of questions to create per article. Defaults to 3.
+    num_key_questions: int = (
+        5  # The number of key questions that are generated. Defaults to 5.
     )
+
+
+class DraftHeading(BaseModel):
+    title: str  # The title of the heading, together with the hashtags to denote the markdown Header level e.g. "# Introduction"
+    content: str | None  # The content of the heading, in markdown format.
+
+
+type KeyQuestion = tuple[str, list[str] | None, SurveyResult | None]
 
 
 class RequestStatus(BaseModel):
@@ -52,69 +48,62 @@ class RequestStatus(BaseModel):
     It stores all data needed to track the request and is meant to represent the progress.
     It can also be stored and loaded due to this."""
 
-    papers: list[tuple[Article, float | None]] = Field(
+    key_questions: list[KeyQuestion] | None = Field(
         default_factory=list
-    )  # The list of papers and their relevance scores
+    )  # Each question may or may not be assigned a url to one or more papers.
 
-    questions: list[tuple[SurveyQuestion, float | None]] = Field(
+    papers: list[Article] = Field(default_factory=list)  # The list of papers
+
+    draft: list[DraftHeading] = Field(
         default_factory=list
-    )  # The list of questions and their relevance scores
+    )  # The draft headings for the final document
 
     settings: StatusSetting  # The settings for the request, such as the research question and paper limit.
     # Does not change over the lifetime of the request.
 
-    trace_file: Optional[str] = Field(
-<<<<<<< HEAD
-        default=None,
-=======
-        default=None, alias="__trace_file__"
->>>>>>> origin/frontend
-    )  # The file to which the status is saved. If None, it is not saved to a file.
-    # Any time the status is updated, a new line with the updated status is written to the file.
-    # In Python, holding a file handle is not recommended, so we will open and close the file each time we write to it.
+    # The tracefile isn't used anymore. Instead, the history is stored in a database outside of the MCP module.
 
     def __init__(
         self,
-<<<<<<< HEAD
-        papers: list[tuple[Article, float | None]] = [],
-        questions: list[tuple[SurveyQuestion, float | None]] = [],
-        trace_file: str | None = None,
+        key_questions: list[tuple[str, list[str] | None, SurveyResult | None]]
+        | None = Field(default_factory=list),  # TODO: is this right?
+        papers: list[Article] = Field(default_factory=list),
+        draft: list[DraftHeading] = Field(default_factory=list),
         settings: StatusSetting | None = None,
-=======
-        research_question: str,
-        paper_limit: int | None = None,
-        trace_file: str | None = None,
->>>>>>> origin/frontend
     ):
         """Initializes the RequestStatus object.
         If trace_file is given, the status will be saved to that file.
         """
-<<<<<<< HEAD
         super().__init__(
-            papers=papers, questions=questions, settings=settings, trace_file=trace_file
-=======
-        settings = StatusSetting(
-            research_question=research_question, paper_limit=paper_limit or 5
-        )
-        super().__init__(
-            papers=[], questions=[], settings=settings, trace_file=trace_file
->>>>>>> origin/frontend
+            key_questions=key_questions,
+            papers=papers,
+            settings=settings,
+            draft=draft,
         )
 
     def pretty_print(self):
         """Prints the status of the request in a human-readable format."""
         print(
-            f"Request status: {self.model_dump()}"
+            f"""
+Request status:
+        Settings:
+                Research question: {self.settings.research_question}
+                Paper limit: {self.settings.paper_limit}
+                Target number of key questions: {self.settings.num_key_questions}
+        Key questions:
+                {"\n\t\t".join([f"Question: {question[0]}\n\t\t\tSources: {', '.join(question[1]) if question[1] else 'None'}\n\t\t\tResult: {question[2].result if question[2] else 'None'}" for question in self.key_questions] if self.key_questions else ["None"])}
+        Papers:
+                {"\n\t\t".join([f"Name: {paper.article.title}\n\t\t\tQuestions: {paper.problem_questions}\n\t\t\tMethods: {paper.methods}" for paper in self.papers])}
+        Draft:
+                {"\n\t\t".join([f"Title: {heading.title}\n\t\t\tContent: {heading.content}" for heading in self.draft])}
+            """
         )  # TODO: Add a better pretty print function
 
-<<<<<<< HEAD
     def to_dict(self) -> dict:
         """Returns the status as a dictionary."""
         # return self.__dict__ # This only bubbles up the JSON serialization problem.
         return self.model_dump()
 
-=======
->>>>>>> origin/frontend
     # I removed the setattr and gettrace methods stuff, because that was a gigantic hack to get the trace file to work.
     # Now it can be done manually in a much cleaner way.
 
@@ -167,13 +156,14 @@ class RequestStages(Enum):
 
     # Note: These values are used to determine the order of the steps, so they should be unique and in ascending order.
     # However, they should not be used directly, only ever over the enum.
+    CREATING_KEY_QUESTIONS = 50
     FINDING_LITERATURE = 100
-    CHECKING_LITERATURE_RELEVANCE = 200
-    CREATING_SURVEY_QUESTIONS = 300
-    CHECKING_QUESTION_RELEVANCE = 400
-    FORMATTING_SURVEY_QUESTIONS = 500
+    PARSE_PAPERS = 200
+    ADJUST_KEY_QUESTIONS = 300
+    EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500
+    CREATING_DRAFT_HEADINGS = 600
+    FILLING_DRAFT_CONTENT = 700
     FINISHED = 999
-<<<<<<< HEAD
 
 
 class SupportedProviders(object):
@@ -217,5 +207,3 @@ class OpenRouter(SupportedProviders):
                 agent=agent, base_url="https://api.openrouter.ai/v1"
             )
         return OpenAIAugmentedLLM()
-=======
->>>>>>> origin/frontend

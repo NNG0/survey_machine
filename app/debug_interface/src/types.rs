@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RawArticle {
     pub title: Option<String>,
     pub author: Option<String>,
@@ -10,33 +10,33 @@ pub struct RawArticle {
     pub url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Article {
     pub article: RawArticle,
     pub problem_questions: Option<Vec<String>>,
     pub methods: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SurveyResult {
     pub result: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StatusSetting {
     pub research_question: String,
     pub paper_limit: i32, // Should technically be u32, but if something weird happens in the database, this shouldn't just fail.
     pub num_key_questions: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DraftHeading {
     pub heading: String,
     pub content: Option<String>,
 }
 
-type KeyQuestion = (String, Option<Vec<String>>, Option<SurveyResult>); // (question, related methods, survey result)
-#[derive(Serialize, Deserialize, Debug)]
+pub type KeyQuestion = (String, Option<Vec<String>>, Option<SurveyResult>); // (question, related methods, survey result)
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RequestStatus {
     pub key_questions: Option<Vec<KeyQuestion>>,
     pub papers: Vec<Article>,
@@ -44,7 +44,7 @@ pub struct RequestStatus {
     pub settings: StatusSetting,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StepInformation {
     pub warnings: Vec<String>,
     pub errors: Vec<String>,

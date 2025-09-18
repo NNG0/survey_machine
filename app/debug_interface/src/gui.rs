@@ -3,7 +3,9 @@ use std::{
     time::SystemTime,
 };
 
+use eframe::App;
 use egui::{RichText, TextEdit};
+use egui_commonmark::CommonMarkCache;
 use log::info;
 use reqwest::blocking::Client;
 
@@ -32,6 +34,7 @@ struct Event {
 enum AppPanel {
     Events,
     Status,
+    MarkdownPreview,
 }
 
 struct MyApp {
@@ -43,6 +46,7 @@ struct MyApp {
     update_sender: Sender<Result<RunNextStepResponse, reqwest::Error>>,
     update_receiver: Receiver<Result<RunNextStepResponse, reqwest::Error>>,
     is_editable: bool, // Whether a step is currently being executed, disables editing
+    markdown_cache: CommonMarkCache,
 }
 
 fn run_next_step(
@@ -70,6 +74,7 @@ impl MyApp {
             update_sender,
             update_receiver,
             is_editable: true, // Initially editable
+            markdown_cache: CommonMarkCache::default(),
         }
     }
 
@@ -128,6 +133,9 @@ impl eframe::App for MyApp {
                 if ui.button("Status").clicked() {
                     self.current_panel = AppPanel::Status;
                 }
+                if ui.button("Markdown Preview").clicked() {
+                    self.current_panel = AppPanel::MarkdownPreview;
+                }
             });
         });
         // Status Panel
@@ -162,7 +170,7 @@ impl eframe::App for MyApp {
                             // );
                             ui.label(
                                 RichText::new(format!(
-                                    "[{:?}] {}",
+                                    "[{}] {}",
                                     event.timestamp.format("%Y-%m-%d %H:%M:%S"),
                                     event.message
                                 ))
@@ -172,6 +180,28 @@ impl eframe::App for MyApp {
                     }
                 });
             }
+            AppPanel::MarkdownPreview => {
+                // Render the draft, if it exists, as markdown
+                ui.heading("Markdown Preview");
+                if self.status.draft.is_empty() {
+                    ui.label("No draft available yet.");
+                } else {
+                    let mut markdown_content = String::new();
+                    for heading in &self.status.draft {
+                        markdown_content.push_str(&format!("{}\n\n", heading.heading)); // The heads should include the # for markdown
+                        if let Some(content) = &heading.content {
+                            markdown_content.push_str(&format!("{content}\n\n"));
+                        }
+                    }
+                    // Use egui_markdown to render the markdown content
+                    // egui_markdown::MarkdownArea::new(&markdown_content).show(ui);
+                    egui_commonmark::CommonMarkViewer::new().show(
+                        ui,
+                        &mut self.markdown_cache,
+                        &markdown_content,
+                    );
+                }
+            }
             AppPanel::Status => {
                 ui.heading("Current Status");
                 egui::ScrollArea::vertical().show(ui, |ui| {
@@ -179,8 +209,11 @@ impl eframe::App for MyApp {
                         .get_visualization(self.is_editable, ui, &mut self.events);
                 });
                 // Just the button to get information about the next step
-                if ui.button("Get Next Step Information").clicked() {
-                    self.get_next_step_and_update()
+                if ui.button("Get Next Step Information").clicked() && self.is_editable {
+                    // Deduplicate click protection
+                    self.is_editable = false;
+                    self.get_next_step_and_update();
+                    self.is_editable = true;
                 }
                 // The button that actually runs the next step
                 if ui.button("Execute Next Step").clicked() {
@@ -218,7 +251,8 @@ impl eframe::App for MyApp {
                     }
                     // Also update the next step information
                     self.get_next_step_and_update();
-                    ctx.request_repaint(); // Ensure the UI updates to reflect new status
+                    // ctx.request_repaint(); // Ensure the UI updates to reflect new status
+                    // This can lead to a lot of updates, so we don't do it automatically.
                 }
             }
         });

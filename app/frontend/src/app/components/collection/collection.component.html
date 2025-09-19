@@ -16,6 +16,11 @@
   </div>
 
   <div class="collection-content" *ngIf="savedPapers.length > 0; else emptyState">
+    <div class="list-toolbar">
+      <button class="remove-all-btn" (click)="removeAllPapers()" title="Delete all papers">
+        <i class="fas fa-trash"></i> Delete all
+      </button>
+    </div>
     <div class="paper-card" *ngFor="let paper of savedPapers">
       <div class="paper-header">
         <div class="paper-title">

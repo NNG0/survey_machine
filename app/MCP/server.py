@@ -105,8 +105,8 @@ def get_openai_settings():
         default_model = "qwq-32b"
         # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
     else:
-        # default_model = "qwen3:0.6b"
-        default_model = "qwen3:4b"
+        default_model = "qwen3:0.6b"
+        #default_model = "qwen3:4b"
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
@@ -524,9 +524,10 @@ async def upload_for_workflow(
         request_status.papers.append(article)
 
         return {
-            "success": True,
-            "request_status": request_status.model_dump(),
-        }
+                "success": True,
+                "request_status": request_status.model_dump(),
+            }
+
 
     except Exception as e:
         print(f"Upload error: {e}")

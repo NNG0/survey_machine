@@ -105,73 +105,75 @@ export class CollectionComponent implements OnInit {
     });
   }
 
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files && input.files[0];
-    if (!file) return;
-
-    // First create paper in database
-    const newPaper: PaperCreate = {
-      title: file.name,
-      authors: 'Local Upload',
-      year: new Date().getFullYear(),
-      abstract: 'PDF file uploaded',
-    };
-
-    this.papersService.createPaper(newPaper).subscribe({
-      next: (response) => {
-        const paperId = response.id;
-        // Then upload the PDF file
-        if (file.type === 'application/pdf') {
-          this.papersService.uploadPDF(paperId, file).subscribe({
-            next: () => {
-              this.loadSavedPapers(); // Reload to show new paper
-              input.value = ''; // Reset file input
-
-              const workflowStatus = this.createWorkflowStatus(file.name);
-              this.workflowService
-                .uploadForWorkflow(file, workflowStatus)
-                .subscribe({
-                  next: (response) => {
-                    console.log('Workflow status updated:', response);
-                  },
-                  error: (workflowError) => {
-                    console.error('Workflow upload failed:', workflowError);
-                  },
-                });
-            },
-            error: (error) => {
-              console.error('Error uploading PDF:', error);
-              alert('Failed to upload PDF');
-            }
-          });
-        } else {
-          this.loadSavedPapers(); // Just reload for non-PDF files
-          input.value = '';
-        }
-      },
-      error: (error) => {
-        console.error('Error creating paper:', error);
-        alert('Failed to create paper');
-      }
-    });
-  }
-
-  startDrafting() {
-    // Placeholder: Wire this to your drafting flow later
-    alert('Drafting started with ' + this.savedPapers.length + ' papers.');
-  }
-
   private createWorkflowStatus(filename: string): RequestStatus {
     return {
-      key_questions: [],
+      key_questions: null,
       papers: [],
       draft: [],
       settings: {
-        research_question: `Analyse ${filename}`,
-        paper_limit: 1,
-        num_key_questions: 5,
-      },
+        research_question: `Analysis of ${filename}`,
+        paper_limit: 5,
+        num_key_questions: 5
+      }
     };
   }
+
+  startDrafting() {
+    console.log('Starting drafting process...');
+    // TODO: Implement drafting workflow
+    alert('Drafting feature coming soon!');
+  }
+
+  onFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  if (file.type !== 'application/pdf') {
+    alert('Only PDF files are supported');
+    input.value = '';
+    return;
+  }
+
+  const workflowStatus = this.createWorkflowStatus(file.name);
+  this.workflowService.uploadForWorkflow(file, workflowStatus).subscribe({
+    next: (response) => {
+      console.log('Workflow status updated:', response.request_status);
+
+      // Kompletten Workflow starten
+      this.runCompleteWorkflow(response.request_status);
+
+      input.value = ''; // Reset file input
+    },
+    error: (workflowError) => {
+      console.error('Workflow upload failed:', workflowError);
+      alert('Failed to upload for workflow');
+    },
+  });
+  }
+
+  private runCompleteWorkflow(status: RequestStatus) {
+    this.workflowService.runSingleNextStep(status).subscribe({
+      next: ([updatedStatus, info]) => {
+        console.log('Workflow step completed:', info);
+
+        // Check if workflow is done (no more steps)
+        if (info.warnings?.some(w => w.includes('No more steps'))) {
+          console.log('🎉 Workflow completed successfully!');
+          this.loadSavedPapers(); // Refresh UI
+          return;
+        }
+
+        // Continue with next step
+        setTimeout(() => {
+          this.runCompleteWorkflow(updatedStatus);
+        }, 500); // Small delay to avoid overwhelming the server
+      },
+      error: (err) => {
+        console.error('Workflow step failed:', err);
+        // Stop on error, but don't crash
+      }
+    });
+  }
 }
+

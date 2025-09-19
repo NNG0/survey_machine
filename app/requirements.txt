@@ -11,3 +11,7 @@ sqlalchemy
 aiosqlite
 # OpenAI
 openai>=1.0.0
+# LLM structured outputs
+instructor
+# PDF parsing
+requests

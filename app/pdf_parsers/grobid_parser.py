@@ -24,7 +24,7 @@ class GrobidParser(PDFParser):
                 response = requests.post(
                     f"{self.grobid_url}/api/processFulltextDocument",
                     files=files,
-                    timeout=30
+                    timeout=120
                 )
                 
             if response.status_code == 200:

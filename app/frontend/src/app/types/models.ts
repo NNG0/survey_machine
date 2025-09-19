@@ -50,3 +50,19 @@ export enum RequestStages {
   FILLING_DRAFT_CONTENT = 700,
   FINISHED = 999,
 }
+
+export interface HistoryEntry {
+  id: number;
+  state: StepState;
+}
+
+export interface StepState {
+  status: RequestStatus;
+  step_information: StepInformation;
+  //stage: RequestStages;
+}
+
+export interface AppState {
+  current_step: StepState;
+  history: HistoryEntry[];
+}

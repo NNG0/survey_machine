@@ -8,6 +8,8 @@ import { TopicsComponent } from "./components/topics/topics.component";
 import { FooterComponent } from "./components/footer/footer.component";
 import { RESTAPIService } from "./restapiservice.service";
 import { RequestStatus } from "./types/models";
+import { initialRequestStatus } from "./types/state";
+import { AppStateService } from "./app-state.service";
 
 @Component({
   selector: "app-root",
@@ -25,24 +27,25 @@ import { RequestStatus } from "./types/models";
   styleUrls: ["./app.component.css"],
 })
 export class AppComponent {
-  constructor(private restApiService: RESTAPIService) {}
+  constructor(
+    private restApiService: RESTAPIService,
+    private appState: AppStateService,
+  ) {}
   showResults = false;
   showTopics = false;
 
   onSearch(searchData: { query: string; filters: any }) {
     let requestStatus: RequestStatus = {
-      papers: [],
-      key_questions: [],
+      ...initialRequestStatus,
       settings: {
+        ...initialRequestStatus.settings,
         research_question: searchData.query,
-        paper_limit: 0,
-        num_key_questions: 0,
       },
-      draft: [],
     };
+
     this.showResults = true;
     this.showTopics = true;
-    // Here you would typically make an API call to get the search results
+
     console.log("Search query:", searchData.query);
     console.log("RequestStatus:", requestStatus);
     console.log("Search filters:", searchData.filters);
@@ -51,6 +54,9 @@ export class AppComponent {
       next: ([updatedStatus, info]) => {
         console.log("Updated status: ", updatedStatus);
         console.log("Info: ", info);
+
+        // TODO: update state
+        this.appState.setCurrentStep(updatedStatus, info);
       },
       error: (err) => {
         console.error("Error running step", err);

@@ -22,4 +22,12 @@ export class RESTAPIService {
       `${this.baseUrl}/next_step`,requestStatus 
     )
   }
+
+  uploadForWorkflow(file: File, requestStatus: RequestStatus): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('request_status_json', JSON.stringify(requestStatus));
+
+    return this.http.post(`${this.baseUrl}/upload_for_workflow`, formData);
+  }
 }

@@ -13,3 +13,6 @@
 
 
 app/MCP/mcp_agent.secrets.yaml
+
+# Database
+app/database/papers.db

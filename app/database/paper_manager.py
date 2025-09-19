@@ -1,15 +1,22 @@
 import sqlite3
 import os
 import shutil
-from typing import List, Dict, Any
+import json
+import uuid
+from typing import List, Dict, Any, Optional
+
 
 class PaperManager:
-    """Einfacher Paper Manager für Frontend"""
     
-    def __init__(self, db_path: str = "app/database/papers.db"):
+    def __init__(self, db_path: str | None = None):
+        if db_path is None:
+            db_dir = os.getenv("DATABASE_PATH", "app/database")
+            db_path = os.path.join(db_dir, "papers.db")
+
         self.db_path = db_path
         self._init_db()
-    
+
+
     def _init_db(self):
         """Erstelle Tabellen falls sie nicht existieren"""
         with sqlite3.connect(self.db_path) as conn:
@@ -30,6 +37,17 @@ class PaperManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            
+            # Workflow Results Tabelle
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS workflow_results (
+                    id TEXT PRIMARY KEY,
+                    research_question TEXT NOT NULL,
+                    result_data TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             conn.commit()
     
     def add_paper(self, title: str, authors: str = "", abstract: str = "", url: str = "", 
@@ -110,7 +128,7 @@ class PaperManager:
         except Exception as e:
             print(f"Error uploading PDF: {e}")
             return False
-    
+
     def get_paper_file_path(self, paper_id: int) -> str:
         """Dateipfad für ein Paper holen"""
         with sqlite3.connect(self.db_path) as conn:
@@ -211,3 +229,64 @@ class PaperManager:
     #                 "avg_relevance": round(row["avg_relevance"], 3) if row["avg_relevance"] else 0
     #             })
     #         return clusters
+    
+    # Workflow Results Management
+    def save_workflow_result(self, request_status_dict: dict) -> str:
+        """Save workflow result and return result ID"""
+        result_id = str(uuid.uuid4())
+        research_question = request_status_dict.get("settings", {}).get("research_question", "Unknown")
+        
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT INTO workflow_results (id, research_question, result_data) VALUES (?, ?, ?)",
+                (result_id, research_question, json.dumps(request_status_dict, default=str))
+            )
+            conn.commit()
+        
+        return result_id
+    
+    def get_all_workflow_results(self) -> List[Dict[str, Any]]:
+        """Get all workflow results for frontend"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, research_question, result_data, created_at FROM workflow_results ORDER BY created_at DESC"
+            ).fetchall()
+            
+            results = []
+            for row in rows:
+                try:
+                    result_data = json.loads(row["result_data"])
+                    results.append({
+                        "id": row["id"],
+                        "research_question": row["research_question"],
+                        "created_at": row["created_at"],
+                        "papers": result_data.get("papers", []),
+                        "key_questions": result_data.get("key_questions", []),
+                        "result": result_data.get("result", [])
+                    })
+                except json.JSONDecodeError:
+                    # Skip malformed entries
+                    continue
+            
+            return results
+    
+    def get_workflow_result(self, result_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific workflow result"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM workflow_results WHERE id = ?", (result_id,)
+            ).fetchone()
+            
+            if row:
+                try:
+                    return {
+                        "id": row["id"],
+                        "research_question": row["research_question"],
+                        "created_at": row["created_at"],
+                        "result_data": json.loads(row["result_data"])
+                    }
+                except json.JSONDecodeError:
+                    return None
+            return None

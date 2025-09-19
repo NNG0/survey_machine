@@ -9,3 +9,5 @@ python-dotenv
 # database
 sqlalchemy
 aiosqlite
+# OpenAI
+openai>=1.0.0

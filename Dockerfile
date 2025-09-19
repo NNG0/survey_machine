@@ -15,8 +15,12 @@ RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
 COPY app ./app
 COPY .env /.env
 
+# Erstelle das Database-Verzeichnis und setze Berechtigungen
+RUN mkdir -p /app/app/database && \
+    chmod 755 /app/app/database
+
 ENV AM_I_IN_DOCKER=true
+ENV DATABASE_PATH=/app/app/database
 
 WORKDIR /app/app
-CMD ["fastapi", "run", "MCP/server.py", "--host", "0.0.0.0", "--port", "8001"]
-# It's on 8001 to not conflict with the main FastAPI app on port 8000
+CMD ["uvicorn", "MCP.server:app", "--host", "0.0.0.0", "--port", "8001"]

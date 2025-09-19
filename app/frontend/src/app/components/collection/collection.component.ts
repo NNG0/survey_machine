@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PapersService, PaperCreate } from '../../services/papers.service';
-import { Router } from '@angular/router';
-import { DraftsService } from '../../services/drafts.service';
+import { RESTAPIService } from '../../restapiservice.service';
+import { RequestStatus } from '../../types/models';
 
 interface SavedPaper {
   id: string;
@@ -31,7 +31,10 @@ interface SavedPaper {
 export class CollectionComponent implements OnInit {
   savedPapers: SavedPaper[] = [];
 
-  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router) {}
+  constructor(
+    private papersService: PapersService,
+    private workflowService: RESTAPIService
+  ) {}
 
   ngOnInit() {
     this.loadSavedPapers();
@@ -124,6 +127,18 @@ export class CollectionComponent implements OnInit {
             next: () => {
               this.loadSavedPapers(); // Reload to show new paper
               input.value = ''; // Reset file input
+
+              const workflowStatus = this.createWorkflowStatus(file.name);
+              this.workflowService
+                .uploadForWorkflow(file, workflowStatus)
+                .subscribe({
+                  next: (response) => {
+                    console.log('Workflow status updated:', response);
+                  },
+                  error: (workflowError) => {
+                    console.error('Workflow upload failed:', workflowError);
+                  },
+                });
             },
             error: (error) => {
               console.error('Error uploading PDF:', error);
@@ -143,8 +158,20 @@ export class CollectionComponent implements OnInit {
   }
 
   startDrafting() {
-    const title = `Draft ${new Date().toLocaleString()}`;
-    const draft = this.draftsService.create(title);
-    this.router.navigate(['/drafts', draft.id]);
+    // Placeholder: Wire this to your drafting flow later
+    alert('Drafting started with ' + this.savedPapers.length + ' papers.');
+  }
+
+  private createWorkflowStatus(filename: string): RequestStatus {
+    return {
+      key_questions: [],
+      papers: [],
+      draft: [],
+      settings: {
+        research_question: `Analyse ${filename}`,
+        paper_limit: 1,
+        num_key_questions: 5,
+      },
+    };
   }
 }

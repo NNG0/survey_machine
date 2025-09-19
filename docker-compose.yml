@@ -1,6 +1,6 @@
 services:
   survey-machine:
-    image: survey-machine
+    #image: survey-machine
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,6 +8,14 @@ services:
     hostname: survey-machine-instance
     ports:
       - "8001:8001"
+    # volumes:
+    #   - ./app/database:/app/app/database
+    environment:
+      - DATABASE_PATH=/app/app/database
+    restart: unless-stopped
+    depends_on:
+      - ollama
+      - grobid
     networks:
       survey-machine:
         # 10.89.0.2
@@ -38,6 +46,14 @@ services:
     ports:
       - "8000:8000" # Note: Ideally, this wouldn't be done and the service would be accessed via the internal network.
     command: python -m literature_access.main --port 8000
+    networks:
+      survey-machine:
+  grobid:
+    image: lfoppiano/grobid:0.8.0
+    container_name: grobid-instance
+    hostname: grobid
+    ports:
+      - "8070:8070"
     networks:
       survey-machine:
 

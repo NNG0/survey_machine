@@ -1,11 +1,15 @@
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import uuid
+
 import httpx
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
+from database.paper_manager import PaperManager
+from pdf_parsers.factory import get_pdf_parser
 
 from .steps import (
-    RequestStatus,
-    StepInformation,
     run_single_next_step,
     run_single_stage,
     run_until_before_stage,
@@ -13,7 +17,13 @@ from .steps import (
 )
 
 
-from .types import RequestStages
+from .types import (
+    Article,
+    RawArticle,
+    RequestStages,
+    RequestStatus,
+    StepInformation,
+)
 
 from mcp_agent.app import MCPApp
 from mcp_agent.config import (
@@ -108,7 +118,7 @@ def get_openai_settings():
     return OpenAISettings(
         base_url=base_url,  # The selected ollama address
         api_key=gwdg_api_key or "ollama",
-        http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
+        http_client=httpx.AsyncClient(timeout=200.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
         default_model=default_model,  # type: ignore
     )
 
@@ -372,3 +382,175 @@ async def run_all_parse_papers(
         )
         request_status, step_info = await run_all_parse_papers_agent(request_status)
         return request_status, step_info
+
+# === WORKFLOW RESULTS STORAGE ===
+
+@app.post("/save_workflow")
+async def save_workflow(request_status: RequestStatus):
+    """Save completed workflow results to database"""
+    try:
+        paper_manager = PaperManager()
+        result_id = paper_manager.save_workflow_result(request_status.model_dump())
+        
+        return {
+            "success": True,
+            "result_id": result_id,
+            "message": "Workflow results saved successfully"
+        }
+        
+    except Exception as e:
+        print(f"Save workflow error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save workflow: {str(e)}"
+        )
+
+
+@app.get("/workflow_results")
+async def get_workflow_results():
+    """Get all saved workflow results"""
+    try:
+        paper_manager = PaperManager()
+        results = paper_manager.get_all_workflow_results()
+        return results
+        
+    except Exception as e:
+        print(f"Get workflow results error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow results: {str(e)}"
+        )
+
+
+@app.get("/workflow_results/{result_id}")
+async def get_workflow_result(result_id: str):
+    """Get specific workflow result"""
+    try:
+        paper_manager = PaperManager()
+        result = paper_manager.get_workflow_result(result_id)
+        
+        if result:
+            return result
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Workflow result not found"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get workflow result error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow result: {str(e)}"
+        )
+
+# === PAPER MANAGEMENT ===
+
+@app.post("/add_paper")
+async def add_paper(
+    title: str,
+    authors: str = "",
+    abstract: str = "",
+    url: str = "",
+    year: int | None = None
+):
+    try:
+        paper_manager = PaperManager()
+        paper_id = paper_manager.add_paper(
+            title=title,
+            authors=authors,
+            abstract=abstract,
+            url=url,
+            year=year
+        )
+        return {"success": True, "id": paper_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add paper: {str(e)}")
+
+
+@app.get("/papers")
+async def get_all_papers():
+    try:
+        paper_manager = PaperManager()
+        return paper_manager.get_all_papers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get papers: {str(e)}")
+
+# === WORKFLOW PDF UPLOAD ===
+
+@app.post("/upload_for_workflow")
+async def upload_for_workflow(
+    file: UploadFile = File(...),
+    request_status_json: str = Form(...),
+):
+    """Upload a PDF, parse it, and append the result to the given RequestStatus."""
+
+    try:
+        request_status = RequestStatus.model_validate_json(request_status_json)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+
+    try:
+        os.makedirs("uploads", exist_ok=True)
+        file_id = str(uuid.uuid4())
+        file_path = f"uploads/{file_id}_{file.filename}"
+
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        parser = get_pdf_parser("grobid")
+        parsed_data = await parser.parse_pdf(file_path)
+
+        parsed_title = parsed_data.get("title") or os.path.splitext(os.path.basename(file_path))[0]
+        parsed_authors = parsed_data.get("authors") or "Unknown"
+        parsed_abstract = parsed_data.get("abstract") or "No abstract"
+
+        article = Article(
+            article=RawArticle(
+                title=parsed_title,
+                author=parsed_authors,
+                abstract=parsed_abstract,
+                url=file_path,
+            ),
+            problem_questions=None,
+            methods=None,
+        )
+
+        if request_status.papers is None:
+            request_status.papers = []
+        request_status.papers.append(article)
+
+        return {
+            "success": True,
+            "request_status": request_status.model_dump(),
+        }
+
+    except Exception as e:
+        print(f"Upload error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+
+@app.post("/upload_paper_pdf/{paper_id}")
+async def upload_paper_pdf(paper_id: int, file: UploadFile = File(...)):
+    """Upload a PDF and attach it to an existing paper in the DB"""
+    try:
+        paper_manager = PaperManager()
+
+        temp_path = f"/tmp/{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        success = paper_manager.upload_paper_pdf(paper_id, temp_path, file.filename)
+
+        os.remove(temp_path)  # tmp cleanup
+
+        if success:
+            return {"success": True, "message": "PDF uploaded successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to upload PDF")
+
+    except Exception as e:
+        print(f"Upload PDF error: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

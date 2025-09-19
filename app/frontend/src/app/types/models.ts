@@ -15,6 +15,11 @@ export interface SurveyResult {
   result: string
 }
 
+export interface DraftHeading {
+  title: string;
+  content: string | null;
+}
+
 export interface StatusSetting {
   research_question: string;
   paper_limit: number;          // Defaults to 5 in backend
@@ -22,9 +27,9 @@ export interface StatusSetting {
 }
 
 export interface RequestStatus {
-  key_questions: [string, string[]|null, SurveyResult | null][];
-  papers: [Article, number | null][];
-  result: SurveyResult[];
+  key_questions: [string, string[] | null, SurveyResult | null][] | null;
+  papers: Article[];
+  draft: DraftHeading[];
   settings: StatusSetting;
 }
 
@@ -41,7 +46,6 @@ export enum RequestStages {
   EXTRACT_RELEVANT_RESULTS_FROM_PAPERS = 500,
   FINISHED = 999
 }
-
 
 
 

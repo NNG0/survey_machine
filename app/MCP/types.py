@@ -1,15 +1,8 @@
-<<<<<<< HEAD
 from enum import Enum
-from typing import Literal, Optional, Self
+from typing import Self
 
 from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
-=======
-import asyncio
-from enum import Enum
-import time
-from typing import Awaitable, Callable, Literal, Optional, Self, TypeVar
 
->>>>>>> origin/frontend
 from pydantic import BaseModel, Field
 
 

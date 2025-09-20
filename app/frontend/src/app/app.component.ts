@@ -30,6 +30,7 @@ export class AppComponent {
   constructor(
     private restApiService: RESTAPIService,
     private appState: AppStateService,
+    public router: Router,
   ) {}
   showResults = false;
   showTopics = false;

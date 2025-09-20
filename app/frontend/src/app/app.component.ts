@@ -1,6 +1,6 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { RouterModule, Router } from "@angular/router";
 import { HeaderComponent } from "./components/header/header.component";
 import { HeroComponent } from "./components/hero/hero.component";
 import { ResultsComponent } from "./components/results/results.component";
@@ -34,7 +34,7 @@ export class AppComponent {
   showResults = false;
   showTopics = false;
 
-  onSearch(searchData: { query: string; filters: any }) {
+  onSearch(searchData: {query: string, filters: any}) {
     let requestStatus: RequestStatus = {
       ...initialRequestStatus,
       settings: {
@@ -42,7 +42,7 @@ export class AppComponent {
         research_question: searchData.query,
       },
     };
-
+    
     this.showResults = true;
     this.showTopics = true;
 

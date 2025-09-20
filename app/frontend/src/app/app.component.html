@@ -2,15 +2,20 @@
 <div class="app-container">
   <app-header></app-header>
 
-  <app-hero (search)="onSearch($event)"></app-hero>
+  <div class="main-content">
+    <!-- Home page content -->
+    <div *ngIf="router.url === '/'">
+      <app-hero (search)="onSearch($event)"></app-hero>
 
-  <div class="content-section" *ngIf="showResults">
-    <app-results [showResults]="showResults"></app-results>
-    <app-topics [showTopics]="showTopics"></app-topics>
+      <div class="content-section" *ngIf="showResults">
+        <app-results [showResults]="showResults"></app-results>
+        <app-topics [showTopics]="showTopics"></app-topics>
+      </div>
+    </div>
+
+    <!-- Routed pages (e.g., Collection) -->
+    <router-outlet />
   </div>
 
   <app-footer></app-footer>
 </div>
-
-<!-- Router outlet for future routing -->
-<!-- <router-outlet /> -->

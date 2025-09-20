@@ -8,3 +8,6 @@ fastapi[standard]
 python-dotenv
 openai
 instructor
+# database
+sqlalchemy
+aiosqlite

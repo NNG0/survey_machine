@@ -1,0 +1,16 @@
+[package]
+name = "debug_interface"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.42"
+eframe = "0.32.3"
+egui = "0.32.3"
+egui_commonmark = "0.21.1"
+env_logger = "0.11.8"
+log = "0.4.28"
+reqwest = { version = "0.12.23", features = ["blocking", "json"] }
+serde = "1.0.225"
+serde_json = "1.0.145"
+serde_repr = "0.1.20"

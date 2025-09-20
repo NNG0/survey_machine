@@ -12,7 +12,9 @@ COPY app/requirements.txt ./app/requirements.txt
 RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
 
 # Copy the rest of the application code
-COPY app ./app
+COPY app/frontend ./app/frontend
+COPY app/literature_access ./app/literature_access
+COPY app/MCP ./app/MCP
 COPY .env /.env
 
 ENV AM_I_IN_DOCKER=true

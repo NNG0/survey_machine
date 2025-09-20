@@ -272,3 +272,10 @@
     <a routerLink="/drafts" class="btn">Back to drafts</a>
   </div>
 </ng-template>
+
+<!-- Draft Markdown Preview -->
+<div class="form-section" *ngIf="draftMarkdownHtml">
+  <h3>Rendered Draft</h3>
+  <div class="card" [innerHTML]="draftMarkdownHtml"></div>
+  <p class="hint">Live preview of the current draft headings.</p>
+  </div>

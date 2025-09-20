@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
 import { RESTAPIService } from '../../restapiservice.service';
 import { RequestStages } from '../../types/models';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-draft-detail',
@@ -23,6 +24,7 @@ export class DraftDetailComponent {
   nextStepInfo: { message: string; single_call_fn_name: string; all_call_fn_name: string; stage: RequestStages } | null = null;
   warnings: string[] = [];
   errors: string[] = [];
+  draftMarkdownHtml: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -37,6 +39,7 @@ export class DraftDetailComponent {
       this.draft = this.draftsService.create('Untitled Draft');
     }
     this.titleEdit = this.draft.title;
+    this.updateDraftMarkdown();
   }
 
   save(): void {
@@ -57,11 +60,13 @@ export class DraftDetailComponent {
       if (updated) {
         this.draft = updated;
       }
+      this.updateDraftMarkdown();
     }, this.saveDelayMs);
   }
 
   // Hook this to any change events from the template
   onRequestStatusChange() {
+    this.updateDraftMarkdown();
     this.scheduleAutoSave();
   }
 
@@ -101,6 +106,7 @@ export class DraftDetailComponent {
 
         // Also update the next step info by calling nextStep again
         this.getNextStepInfo();
+        this.updateDraftMarkdown();
       },
       error: (err) => {
         this.errors = [String(err)];
@@ -114,6 +120,23 @@ export class DraftDetailComponent {
   delete(): void {
     this.draftsService.delete(this.draft.id);
     this.router.navigate(['/drafts']);
+  }
+
+  private updateDraftMarkdown(): void {
+    try {
+      const rs = this.draft.requestStatus;
+      if (!rs || !Array.isArray(rs.draft)) {
+        this.draftMarkdownHtml = null;
+        return;
+      }
+      const md = rs.draft
+        .map(h => `${h.title}\n\n${h.content ?? ''}`) // The title already has a leading #
+        .join('\n\n');
+      const html = marked.parse(md);
+      this.draftMarkdownHtml = String(html);
+    } catch {
+      this.draftMarkdownHtml = null;
+    }
   }
 }
 

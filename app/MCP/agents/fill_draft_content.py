@@ -38,6 +38,11 @@ async def run_single_fill_draft_content_agent(
     )
     # I've added the content back in, it was repeating itself too much across sections.
 
+    # Also add the name of the next heading to write
+    next_heading_title = "(none)"
+    if next_idx + 1 < len(status.draft):
+        next_heading_title = status.draft[next_idx + 1].title
+
     prompt = f"""
     You are drafting a literature review section. Write the full markdown content for the given heading.
 
@@ -47,11 +52,14 @@ async def run_single_fill_draft_content_agent(
     Key questions:
     {key_qs_str}
 
-    Heading to write:
-    {heading.title}
-
     Previously written sections (for context, do not repeat headings):
     {prior_sections_md if prior_sections_md else "(none)"}
+
+    Next heading to write (for context, do not write this one yet):
+    {next_heading_title}
+    
+    Heading to write:
+    {heading.title}
 
     Requirements:
     - Output markdown content only, no JSON, no backticks.

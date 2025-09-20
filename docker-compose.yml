@@ -1,4 +1,14 @@
 services:
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    container_name: frontend-instance
+    hostname: frontend-instance
+    ports:
+      - "4200:4200"
+    networks:
+      survey-machine:
   survey-machine:
     image: survey-machine
     build:

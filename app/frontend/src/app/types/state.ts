@@ -28,7 +28,7 @@ const initialStepInformation: StepInformation = {
 const initialStepState: StepState = {
   status: initialRequestStatus,
   step_information: initialStepInformation,
-  stage: RequestStages.CREATING_KEY_QUESTIONS,
+  // stage: RequestStages.CREATING_KEY_QUESTIONS,
 };
 
 export const initialAppState: AppState = {

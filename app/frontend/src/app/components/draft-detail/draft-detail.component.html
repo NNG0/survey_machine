@@ -33,11 +33,22 @@
     <div class="form-section vertical" *ngIf="draft.requestStatus as rs">
       <h3>Request Status</h3>
 
+      <!-- Show the Research question in a textedit field, just for convenience-->
+      <div class="form-section">
+        <label>Research Question</label>
+        <input type="text" [(ngModel)]="rs.settings.research_question" (ngModelChange)="onRequestStatusChange()"
+          placeholder="Enter research question" />
+      </div>
+
       <!-- Controls: Next Step & Execute -->
       <div class="form-section">
         <button class="btn" (click)="getNextStepInfo()" [disabled]="isProcessing || isFetchingNext">Get Next Step
           Information</button>
-        <button class="btn primary" (click)="executeNextStep()" [disabled]="isProcessing">Execute Next Step</button>
+        <button class="btn primary" (click)="executeNextStep()"
+          [disabled]="isProcessing || (rs.settings.research_question.length < 10)"
+          [title]="rs.settings.research_question.length < 10 ? 'Research question must be at least 10 characters' : ''">
+          Execute Next Step
+        </button>
         <span *ngIf="isProcessing || isFetchingNext" class="spinner" aria-label="Loading"></span>
       </div>
       <div class="form-section" *ngIf="nextStepInfo as nsi">
@@ -258,11 +269,12 @@
         </details>
 
         <!-- Settings -->
-        <details open>
+        <details>
           <summary><strong>Settings</strong></summary>
           <div class="form-section">
             <label>Research Question</label>
-            <input type="text" [(ngModel)]="rs.settings.research_question" (ngModelChange)="onRequestStatusChange()" />
+            <input type="text" [(ngModel)]="rs.settings.research_question" (ngModelChange)="onRequestStatusChange()"
+              placeholder="Enter your research question here..." />
           </div>
           <div class="form-section">
             <label>Paper Limit</label>

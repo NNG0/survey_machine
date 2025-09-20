@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { RequestStatus, StepInformation } from "./types/models";
+import { RequestStages, RequestStatus, StepInformation } from "./types/models";
 import { Observable } from "rxjs";
 
 @Injectable({
@@ -31,8 +31,8 @@ export class RESTAPIService {
 
   nextStep(
     requestStatus: RequestStatus,
-  ): Observable<[string, string, string, RequestStatus]> {
-    return this.http.post<[string, string, string, RequestStatus]>(
+  ): Observable<[string, string, string, RequestStages]> {
+    return this.http.post<[string, string, string, RequestStages]>(
       `${this.baseUrl}/next_step`,
       requestStatus,
     );

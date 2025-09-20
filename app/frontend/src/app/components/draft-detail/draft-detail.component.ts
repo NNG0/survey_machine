@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
+import { RESTAPIService } from '../../restapiservice.service';
+import { RequestStages } from '../../types/models';
 
 @Component({
   selector: 'app-draft-detail',
@@ -16,8 +18,18 @@ export class DraftDetailComponent {
   titleEdit: string = '';
   private saveTimer: any;
   private readonly saveDelayMs = 500;
+  isProcessing = false;
+  isFetchingNext = false;
+  nextStepInfo: { message: string; single_call_fn_name: string; all_call_fn_name: string; stage: RequestStages } | null = null;
+  warnings: string[] = [];
+  errors: string[] = [];
 
-  constructor(private route: ActivatedRoute, private router: Router, private draftsService: DraftsService) {
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private draftsService: DraftsService,
+    private api: RESTAPIService,
+  ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.draft = this.draftsService.getByIdOrCreate(id, 'Untitled Draft');
@@ -51,6 +63,52 @@ export class DraftDetailComponent {
   // Hook this to any change events from the template
   onRequestStatusChange() {
     this.scheduleAutoSave();
+  }
+
+  getNextStepInfo(): void {
+    if (this.isProcessing || this.isFetchingNext) return;
+    this.isFetchingNext = true;
+    this.api.nextStep(this.draft.requestStatus).subscribe({
+      next: (resp) => {
+        const [message, single_call_fn_name, all_call_fn_name, stage] = resp;
+        this.nextStepInfo = { message, single_call_fn_name, all_call_fn_name, stage };
+      },
+      error: (err) => {
+        this.errors = [String(err)];
+      },
+      complete: () => {
+        this.isFetchingNext = false;
+        this.scheduleAutoSave();
+      },
+    });
+  }
+
+  executeNextStep(): void {
+    if (this.isProcessing) return;
+    this.isProcessing = true;
+    this.warnings = [];
+    this.errors = [];
+    this.api.runSingleNextStep(this.draft.requestStatus).subscribe({
+      next: ([newStatus, stepInfo]) => {
+        this.draft.requestStatus = newStatus;
+        this.warnings = stepInfo.warnings || [];
+        this.errors = stepInfo.errors || [];
+        const updated = this.draftsService.update(this.draft.id, {
+          title: this.titleEdit,
+          requestStatus: this.draft.requestStatus,
+        });
+        if (updated) this.draft = updated;
+
+        // Also update the next step info by calling nextStep again
+        this.getNextStepInfo();
+      },
+      error: (err) => {
+        this.errors = [String(err)];
+      },
+      complete: () => {
+        this.isProcessing = false;
+      },
+    });
   }
 
   delete(): void {

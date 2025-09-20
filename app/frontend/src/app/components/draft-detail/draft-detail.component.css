@@ -1,3 +1,18 @@
+/* Simple inline spinner */
+.spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid rgba(0,0,0,0.2);
+	border-top-color: rgba(0,0,0,0.6);
+	border-radius: 50%;
+	animation: spin 0.6s linear infinite;
+	margin-left: 8px;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
 .draft-detail { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
 .draft-card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; }
@@ -14,6 +29,7 @@
 input[type="text"] { flex: 1; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; box-sizing: border-box; height: 38px; padding: 0 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; line-height: 1; white-space: nowrap; font-family: inherit; -webkit-appearance: none; appearance: none; transition: background-color 0.2s ease, transform 0.05s ease; }
 .btn.primary { background: #6c47ff; color: white; }
+.btn.primary:disabled, .btn.primary[disabled] { background: #766e96; color: #f3f3f3; cursor: not-allowed; }
 .btn:hover { transform: translateY(1px); }
 
 .empty-state { text-align: center; color: #666; padding: 40px 0; }

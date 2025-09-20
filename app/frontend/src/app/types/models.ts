@@ -30,7 +30,7 @@ export type KeyQuestion = [string, string[] | null, SurveyResult | null];
 
 export interface RequestStatus {
   key_questions: [string, string[] | null, SurveyResult | null][] | null;
-  papers: [Article, number | null][];
+  papers: Article[];
   draft: DraftHeading[];
   settings: StatusSetting;
 }

@@ -33,203 +33,235 @@
     <div class="form-section" *ngIf="draft.requestStatus as rs">
       <h3>Request Status</h3>
 
-      <!-- Key Questions -->
-      <details open>
-        <summary><strong>Key Questions</strong></summary>
-        <div *ngIf="rs.key_questions?.length; else noKq">
-          <div class="card" *ngFor="let kq of rs.key_questions; let i = index">
+      <!-- Controls: Next Step & Execute -->
+      <div class="form-section">
+        <button class="btn" (click)="getNextStepInfo()" [disabled]="isProcessing || isFetchingNext">Get Next Step
+          Information</button>
+        <button class="btn primary" (click)="executeNextStep()" [disabled]="isProcessing">Execute Next Step</button>
+        <span *ngIf="isProcessing || isFetchingNext" class="spinner" aria-label="Loading"></span>
+      </div>
+      <div class="form-section" *ngIf="nextStepInfo as nsi">
+        <label>Next Step</label>
+        <div class="card">
+          <div>{{ nsi.message }}</div>
+          <div>{{ nsi.stage }}</div> <!-- TODO: remove, this is just the enum number -->
+        </div>
+      </div>
+      <div class="form-section" *ngIf="warnings.length">
+        <label>Warnings</label>
+        <ul>
+          <li *ngFor="let w of warnings">{{ w }}</li>
+        </ul>
+      </div>
+      <div class="form-section" *ngIf="errors.length">
+        <label>Errors</label>
+        <ul>
+          <div style="max-height: 200px; overflow-y: auto;">
+            <li *ngFor="let e of errors">{{ e }}</li>
+          </div>
+        </ul>
+      </div>
+
+      <fieldset [disabled]="isProcessing">
+        <!-- Key Questions -->
+        <details open>
+          <summary><strong>Key Questions</strong></summary>
+          <div *ngIf="rs.key_questions?.length; else noKq">
+            <div class="card" *ngFor="let kq of rs.key_questions; let i = index">
+              <div class="draft-header">
+                <div class="draft-title">
+                  <label>Question {{ i + 1 }}</label>
+                </div>
+                <div class="draft-actions">
+                  <button class="remove-btn" (click)="rs.key_questions!.splice(i, 1); onRequestStatusChange()"
+                    title="Remove question">
+                    ❌
+                  </button>
+                </div>
+              </div>
+
+              <input type="text" [(ngModel)]="rs.key_questions![i][0]" (ngModelChange)="onRequestStatusChange()" />
+
+              <!-- Related Methods -->
+              <div class="form-section" *ngIf="rs.key_questions![i][1] as methods; else addMethodsBtn">
+                <label>Related Methods</label>
+                <div class="row" *ngFor="let m of methods; let j = index">
+                  <input type="text" [(ngModel)]="rs.key_questions![i][1]![j]"
+                    (ngModelChange)="onRequestStatusChange()" />
+                  <button class="remove-btn" (click)="rs.key_questions![i][1]!.splice(j, 1); onRequestStatusChange()"
+                    title="Remove method">❌</button>
+                </div>
+                <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()">Add Related
+                  Method</button>
+              </div>
+              <ng-template #addMethodsBtn>
+                <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related
+                  Method</button>
+              </ng-template>
+
+              <!-- Survey Result -->
+              <div class="form-section" *ngIf="rs.key_questions![i][2] as sr; else addSurveyResultBtn">
+                <label>Survey Result</label>
+                <textarea rows="4" [(ngModel)]="rs.key_questions![i][2]!.result"
+                  (ngModelChange)="onRequestStatusChange()"></textarea>
+              </div>
+              <ng-template #addSurveyResultBtn>
+                <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add
+                  Survey
+                  Result</button>
+              </ng-template>
+            </div>
+          </div>
+          <ng-template #noKq>
+            <p>No key questions defined.</p>
+          </ng-template>
+          <button class="btn primary"
+            (click)="rs.key_questions ? rs.key_questions.push(['', [], null]) : rs.key_questions = [['', [], null]]; onRequestStatusChange()">
+            Add Key Question
+          </button>
+        </details>
+
+        <!-- Papers -->
+        <details>
+          <summary><strong>Papers</strong></summary>
+          <div *ngFor="let p of rs.papers; let i = index" class="card">
             <div class="draft-header">
               <div class="draft-title">
-                <label>Question {{ i + 1 }}</label>
+                <label>Paper {{ i + 1 }}</label>
               </div>
               <div class="draft-actions">
-                <button class="remove-btn" (click)="rs.key_questions!.splice(i, 1); onRequestStatusChange()"
-                  title="Remove question">
-                  ❌
-                </button>
+                <button class="remove-btn" (click)="rs.papers.splice(i, 1); onRequestStatusChange()"
+                  title="Remove paper">❌</button>
               </div>
             </div>
 
-            <input type="text" [(ngModel)]="rs.key_questions![i][0]" (ngModelChange)="onRequestStatusChange()" />
-
-            <!-- Related Methods -->
-            <div class="form-section" *ngIf="rs.key_questions![i][1] as methods; else addMethodsBtn">
-              <label>Related Methods</label>
-              <div class="row" *ngFor="let m of methods; let j = index">
-                <input type="text" [(ngModel)]="rs.key_questions![i][1]![j]"
-                  (ngModelChange)="onRequestStatusChange()" />
-                <button class="remove-btn" (click)="rs.key_questions![i][1]!.splice(j, 1); onRequestStatusChange()"
-                  title="Remove method">❌</button>
-              </div>
-              <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()">Add Related
-                Method</button>
-            </div>
-            <ng-template #addMethodsBtn>
-              <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related
-                Method</button>
+            <label>Title</label>
+            <ng-container *ngIf="p.article.title !== null; else addTitle">
+              <input type="text" [(ngModel)]="p.article.title" (ngModelChange)="onRequestStatusChange()" />
+            </ng-container>
+            <ng-template #addTitle>
+              <p>No title</p>
+              <button class="btn" (click)="p.article.title = ''; onRequestStatusChange()">Add Title</button>
             </ng-template>
 
-            <!-- Survey Result -->
-            <div class="form-section" *ngIf="rs.key_questions![i][2] as sr; else addSurveyResultBtn">
-              <label>Survey Result</label>
-              <textarea rows="4" [(ngModel)]="rs.key_questions![i][2]!.result"
-                (ngModelChange)="onRequestStatusChange()"></textarea>
+            <label>Author</label>
+            <ng-container *ngIf="p.article.author !== null; else addAuthor">
+              <input type="text" [(ngModel)]="p.article.author" (ngModelChange)="onRequestStatusChange()" />
+            </ng-container>
+            <ng-template #addAuthor>
+              <p>No author</p>
+              <button class="btn" (click)="p.article.author = ''; onRequestStatusChange()">Add Author</button>
+            </ng-template>
+
+            <label>Abstract</label>
+            <ng-container *ngIf="p.article.abstract !== null; else addAbstract">
+              <textarea rows="4" [(ngModel)]="p.article.abstract" (ngModelChange)="onRequestStatusChange()"></textarea>
+            </ng-container>
+            <ng-template #addAbstract>
+              <p>No abstract</p>
+              <button class="btn" (click)="p.article.abstract = ''; onRequestStatusChange()">Add Abstract</button>
+            </ng-template>
+
+            <label>URL</label>
+            <ng-container *ngIf="p.article.url !== null; else addUrl">
+              <input type="text" [(ngModel)]="p.article.url" (ngModelChange)="onRequestStatusChange()" />
+              <a class="btn" *ngIf="p.article.url" [href]="p.article.url" target="_blank" rel="noopener">Open
+                URL</a>
+            </ng-container>
+            <ng-template #addUrl>
+              <p>No URL</p>
+              <button class="btn" (click)="p.article.url = ''; onRequestStatusChange()">Add URL</button>
+            </ng-template>
+
+            <!-- Problem Questions -->
+            <details>
+              <summary>Problem Questions</summary>
+              <div *ngIf="p.problem_questions as qs">
+                <div class="row" *ngFor="let q of qs; let j = index">
+                  <input type="text" [(ngModel)]="p.problem_questions![j]" (ngModelChange)="onRequestStatusChange()" />
+                  <button class="remove-btn" (click)="p.problem_questions!.splice(j, 1); onRequestStatusChange()"
+                    title="Remove question">❌</button>
+                </div>
+                <button class="btn" (click)="p.problem_questions!.push(''); onRequestStatusChange()">Add Problem
+                  Question</button>
+              </div>
+              <div *ngIf="!p.problem_questions">
+                <button class="btn" (click)="p.problem_questions = ['']; onRequestStatusChange()">Add Problem
+                  Question</button>
+              </div>
+            </details>
+
+            <!-- Methods -->
+            <details>
+              <summary>Methods</summary>
+              <div *ngIf="p.methods as ms">
+                <div class="row" *ngFor="let m of ms; let j = index">
+                  <input type="text" [(ngModel)]="p.methods![j]" (ngModelChange)="onRequestStatusChange()" />
+                  <button class="remove-btn" (click)="p.methods!.splice(j, 1); onRequestStatusChange()"
+                    title="Remove method">❌</button>
+                </div>
+                <button class="btn" (click)="p.methods!.push(''); onRequestStatusChange()">Add Method</button>
+              </div>
+              <div *ngIf="!p.methods">
+                <button class="btn" (click)="p.methods = ['']; onRequestStatusChange()">Add Method</button>
+              </div>
+            </details>
+          </div>
+
+          <button class="btn primary"
+            (click)="rs.papers.push({ article: { title: null, author: null, abstract: null, url: null }, problem_questions: null, methods: null }); onRequestStatusChange()">
+            Add Paper
+          </button>
+        </details>
+
+        <!-- Draft -->
+        <details>
+          <summary><strong>Draft</strong></summary>
+          <div *ngFor="let h of rs.draft; let i = index" class="card">
+            <div class="draft-header">
+              <div class="draft-title">
+                <label>Heading {{ i + 1 }}</label>
+              </div>
+              <div class="draft-actions">
+                <button class="remove-btn" (click)="rs.draft.splice(i, 1); onRequestStatusChange()"
+                  title="Remove heading">❌</button>
+              </div>
             </div>
-            <ng-template #addSurveyResultBtn>
-              <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add Survey
-                Result</button>
+            <label>Title</label>
+            <input type="text" [(ngModel)]="rs.draft[i].title" (ngModelChange)="onRequestStatusChange()" />
+
+            <label>Content</label>
+            <ng-container *ngIf="rs.draft[i].content !== null; else addContent">
+              <textarea rows="6" [(ngModel)]="rs.draft[i].content" (ngModelChange)="onRequestStatusChange()"></textarea>
+            </ng-container>
+            <ng-template #addContent>
+              <p>No content</p>
+              <button class="btn" (click)="rs.draft[i].content = ''; onRequestStatusChange()">Add Content</button>
             </ng-template>
           </div>
-        </div>
-        <ng-template #noKq>
-          <p>No key questions defined.</p>
-        </ng-template>
-        <button class="btn primary"
-          (click)="rs.key_questions ? rs.key_questions.push(['', [], null]) : rs.key_questions = [['', [], null]]; onRequestStatusChange()">
-          Add Key Question
-        </button>
-      </details>
+          <button class="btn primary" (click)="rs.draft.push({ title: '', content: null }); onRequestStatusChange()">Add
+            Heading</button>
+        </details>
 
-      <!-- Papers -->
-      <details>
-        <summary><strong>Papers</strong></summary>
-        <div *ngFor="let p of rs.papers; let i = index" class="card">
-          <div class="draft-header">
-            <div class="draft-title">
-              <label>Paper {{ i + 1 }}</label>
-            </div>
-            <div class="draft-actions">
-              <button class="remove-btn" (click)="rs.papers.splice(i, 1); onRequestStatusChange()"
-                title="Remove paper">❌</button>
-            </div>
+        <!-- Settings -->
+        <details>
+          <summary><strong>Settings</strong></summary>
+          <div class="form-section">
+            <label>Research Question</label>
+            <input type="text" [(ngModel)]="rs.settings.research_question" (ngModelChange)="onRequestStatusChange()" />
           </div>
-
-          <label>Title</label>
-          <ng-container *ngIf="p[0].article.title !== null; else addTitle">
-            <input type="text" [(ngModel)]="p[0].article.title" (ngModelChange)="onRequestStatusChange()" />
-          </ng-container>
-          <ng-template #addTitle>
-            <p>No title</p>
-            <button class="btn" (click)="p[0].article.title = ''; onRequestStatusChange()">Add Title</button>
-          </ng-template>
-
-          <label>Author</label>
-          <ng-container *ngIf="p[0].article.author !== null; else addAuthor">
-            <input type="text" [(ngModel)]="p[0].article.author" (ngModelChange)="onRequestStatusChange()" />
-          </ng-container>
-          <ng-template #addAuthor>
-            <p>No author</p>
-            <button class="btn" (click)="p[0].article.author = ''; onRequestStatusChange()">Add Author</button>
-          </ng-template>
-
-          <label>Abstract</label>
-          <ng-container *ngIf="p[0].article.abstract !== null; else addAbstract">
-            <textarea rows="4" [(ngModel)]="p[0].article.abstract" (ngModelChange)="onRequestStatusChange()"></textarea>
-          </ng-container>
-          <ng-template #addAbstract>
-            <p>No abstract</p>
-            <button class="btn" (click)="p[0].article.abstract = ''; onRequestStatusChange()">Add Abstract</button>
-          </ng-template>
-
-          <label>URL</label>
-          <ng-container *ngIf="p[0].article.url !== null; else addUrl">
-            <input type="text" [(ngModel)]="p[0].article.url" (ngModelChange)="onRequestStatusChange()" />
-            <a class="btn" *ngIf="p[0].article.url" [href]="p[0].article.url" target="_blank" rel="noopener">Open
-              URL</a>
-          </ng-container>
-          <ng-template #addUrl>
-            <p>No URL</p>
-            <button class="btn" (click)="p[0].article.url = ''; onRequestStatusChange()">Add URL</button>
-          </ng-template>
-
-          <!-- Problem Questions -->
-          <details>
-            <summary>Problem Questions</summary>
-            <div *ngIf="p[0].problem_questions as qs">
-              <div class="row" *ngFor="let q of qs; let j = index">
-                <input type="text" [(ngModel)]="p[0].problem_questions![j]" (ngModelChange)="onRequestStatusChange()" />
-                <button class="remove-btn" (click)="p[0].problem_questions!.splice(j, 1); onRequestStatusChange()"
-                  title="Remove question">❌</button>
-              </div>
-              <button class="btn" (click)="p[0].problem_questions!.push(''); onRequestStatusChange()">Add Problem
-                Question</button>
-            </div>
-            <div *ngIf="!p[0].problem_questions">
-              <button class="btn" (click)="p[0].problem_questions = ['']; onRequestStatusChange()">Add Problem
-                Question</button>
-            </div>
-          </details>
-
-          <!-- Methods -->
-          <details>
-            <summary>Methods</summary>
-            <div *ngIf="p[0].methods as ms">
-              <div class="row" *ngFor="let m of ms; let j = index">
-                <input type="text" [(ngModel)]="p[0].methods![j]" (ngModelChange)="onRequestStatusChange()" />
-                <button class="remove-btn" (click)="p[0].methods!.splice(j, 1); onRequestStatusChange()"
-                  title="Remove method">❌</button>
-              </div>
-              <button class="btn" (click)="p[0].methods!.push(''); onRequestStatusChange()">Add Method</button>
-            </div>
-            <div *ngIf="!p[0].methods">
-              <button class="btn" (click)="p[0].methods = ['']; onRequestStatusChange()">Add Method</button>
-            </div>
-          </details>
-        </div>
-
-        <button class="btn primary"
-          (click)="rs.papers.push([{ article: { title: null, author: null, abstract: null, url: null }, problem_questions: null, methods: null }, null]); onRequestStatusChange()">
-          Add Paper
-        </button>
-      </details>
-
-      <!-- Draft -->
-      <details>
-        <summary><strong>Draft</strong></summary>
-        <div *ngFor="let h of rs.draft; let i = index" class="card">
-          <div class="draft-header">
-            <div class="draft-title">
-              <label>Heading {{ i + 1 }}</label>
-            </div>
-            <div class="draft-actions">
-              <button class="remove-btn" (click)="rs.draft.splice(i, 1); onRequestStatusChange()"
-                title="Remove heading">❌</button>
-            </div>
+          <div class="form-section">
+            <label>Paper Limit</label>
+            <input type="number" min="1" max="10" [(ngModel)]="rs.settings.paper_limit"
+              (ngModelChange)="onRequestStatusChange()" />
           </div>
-          <label>Title</label>
-          <input type="text" [(ngModel)]="rs.draft[i].title" (ngModelChange)="onRequestStatusChange()" />
-
-          <label>Content</label>
-          <ng-container *ngIf="rs.draft[i].content !== null; else addContent">
-            <textarea rows="6" [(ngModel)]="rs.draft[i].content" (ngModelChange)="onRequestStatusChange()"></textarea>
-          </ng-container>
-          <ng-template #addContent>
-            <p>No content</p>
-            <button class="btn" (click)="rs.draft[i].content = ''; onRequestStatusChange()">Add Content</button>
-          </ng-template>
-        </div>
-        <button class="btn primary" (click)="rs.draft.push({ title: '', content: null }); onRequestStatusChange()">Add
-          Heading</button>
-      </details>
-
-      <!-- Settings -->
-      <details>
-        <summary><strong>Settings</strong></summary>
-        <div class="form-section">
-          <label>Research Question</label>
-          <input type="text" [(ngModel)]="rs.settings.research_question" (ngModelChange)="onRequestStatusChange()" />
-        </div>
-        <div class="form-section">
-          <label>Paper Limit</label>
-          <input type="number" min="1" max="10" [(ngModel)]="rs.settings.paper_limit"
-            (ngModelChange)="onRequestStatusChange()" />
-        </div>
-        <div class="form-section">
-          <label>Number of Key Questions</label>
-          <input type="number" min="1" max="10" [(ngModel)]="rs.settings.num_key_questions"
-            (ngModelChange)="onRequestStatusChange()" />
-        </div>
-      </details>
+          <div class="form-section">
+            <label>Number of Key Questions</label>
+            <input type="number" min="1" max="10" [(ngModel)]="rs.settings.num_key_questions"
+              (ngModelChange)="onRequestStatusChange()" />
+          </div>
+        </details>
+      </fieldset>
     </div>
   </div>
 </div>

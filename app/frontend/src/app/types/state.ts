@@ -9,8 +9,8 @@ import {
 
 const initialStatusSetting: StatusSetting = {
   research_question: "",
-  paper_limit: 0, // Defaults to 5 in backend
-  num_key_questions: 0,
+  paper_limit: 5, // Defaults to 5 in backend
+  num_key_questions: 5,
 };
 
 export const initialRequestStatus: RequestStatus = {

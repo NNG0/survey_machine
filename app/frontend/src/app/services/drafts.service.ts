@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { RequestStatus } from '../types/models';
+import { initialRequestStatus } from '../types/state';
 
 export interface DraftItem {
   id: string;
@@ -8,6 +10,7 @@ export interface DraftItem {
   keywords?: string[];
   status: 'loading' | 'ready';
   markdown?: string;
+  requestStatus: RequestStatus;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,6 +39,10 @@ export class DraftsService {
     return this.readAll().find(d => d.id === id);
   }
 
+  getByIdOrCreate(id: string, default_title: string): DraftItem {
+    return this.getById(id) || this.create(default_title);
+  }
+
   create(title: string): DraftItem {
     const now = new Date().toISOString();
     const item: DraftItem = {
@@ -44,7 +51,8 @@ export class DraftsService {
       createdAt: now,
       updatedAt: now,
       keywords: [],
-      status: 'loading'
+      status: 'loading',
+      requestStatus: {...initialRequestStatus},
     };
     const items = this.readAll();
     items.unshift(item);
@@ -59,7 +67,10 @@ export class DraftsService {
     return item;
   }
 
-  update(id: string, updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'status' | 'markdown'>>): DraftItem | undefined {
+  update(
+    id: string,
+    updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'status' | 'markdown' | 'requestStatus'>>
+  ): DraftItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;

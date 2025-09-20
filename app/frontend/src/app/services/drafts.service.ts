@@ -6,7 +6,6 @@ export interface DraftItem {
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   keywords?: string[];
-  status: 'loading' | 'ready';
   markdown?: string;
 }
 
@@ -43,23 +42,15 @@ export class DraftsService {
       title,
       createdAt: now,
       updatedAt: now,
-      keywords: [],
-      status: 'loading'
+      keywords: []
     };
     const items = this.readAll();
     items.unshift(item);
     this.writeAll(items);
-    // Simulate background processing; mark as ready after a short delay
-    setTimeout(() => {
-      this.update(item.id, {
-        status: 'ready',
-        markdown: `# ${title}\n\nThis is a generated draft.\n\n- Created: ${new Date(item.createdAt).toLocaleString()}\n- Updated: ${new Date().toLocaleString()}`
-      });
-    }, 2000);
     return item;
   }
 
-  update(id: string, updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'status' | 'markdown'>>): DraftItem | undefined {
+  update(id: string, updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'markdown'>>): DraftItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;

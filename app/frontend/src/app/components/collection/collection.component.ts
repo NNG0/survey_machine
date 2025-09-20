@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PapersService, PaperCreate } from '../../services/papers.service';
 import { Router } from '@angular/router';
 import { DraftsService } from '../../services/drafts.service';
+import { FormsModule } from '@angular/forms';
 
 interface SavedPaper {
   id: string;
@@ -24,12 +25,15 @@ interface SavedPaper {
 @Component({
   selector: 'app-collection',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './collection.component.html',
   styleUrls: ['./collection.component.css']
 })
 export class CollectionComponent implements OnInit {
   savedPapers: SavedPaper[] = [];
+  showDraftModal = false;
+  researchQuestions: string[] = [''];
+  sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
   constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router) {}
 
@@ -55,6 +59,7 @@ export class CollectionComponent implements OnInit {
           filename: p.original_filename,
           contentPreview: p.abstract
         }));
+        this.sortPapers();
       },
       error: (error) => {
         console.error('Error loading papers:', error);
@@ -69,6 +74,7 @@ export class CollectionComponent implements OnInit {
     if (saved) {
       const parsed = JSON.parse(saved);
       this.savedPapers = parsed.map((p: any) => ({ ...p, savedAt: new Date(p.savedAt) }));
+      this.sortPapers();
     }
   }
 
@@ -80,6 +86,7 @@ export class CollectionComponent implements OnInit {
     this.papersService.deletePaper(paperId).subscribe({
       next: () => {
         this.savedPapers = this.savedPapers.filter(paper => paper.id !== paperId);
+        this.sortPapers();
       },
       error: (error) => {
         console.error('Error deleting paper:', error);
@@ -94,6 +101,7 @@ export class CollectionComponent implements OnInit {
     this.papersService.deleteAllPapers().subscribe({
       next: () => {
         this.savedPapers = [];
+        this.sortPapers();
       },
       error: (error) => {
         console.error('Error deleting all papers:', error);
@@ -143,8 +151,63 @@ export class CollectionComponent implements OnInit {
   }
 
   startDrafting() {
-    const title = `Draft ${new Date().toLocaleString()}`;
+    this.showDraftModal = true;
+    if (!this.researchQuestions || this.researchQuestions.length === 0) {
+      this.researchQuestions = [''];
+    }
+  }
+
+  addResearchQuestion() {
+    if (this.researchQuestions.length < 5) {
+      this.researchQuestions.push('');
+    }
+  }
+
+  removeResearchQuestion(index: number) {
+    if (index > 0 && this.researchQuestions.length > 1) {
+      this.researchQuestions.splice(index, 1);
+    }
+  }
+
+  closeDraftModal() {
+    this.showDraftModal = false;
+  }
+
+  submitDraft() {
+    const trimmed = this.researchQuestions.map(q => (q || '').trim()).filter(q => q.length > 0);
+    if (trimmed.length === 0) {
+      alert('Please provide at least one research question.');
+      return;
+    }
+    const first = trimmed[0];
+    const title = `Draft: ${first}`;
     const draft = this.draftsService.create(title);
+    if (trimmed.length > 0) {
+      this.draftsService.update(draft.id, { keywords: trimmed.slice(0, 5) });
+    }
+    this.showDraftModal = false;
     this.router.navigate(['/drafts', draft.id]);
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  sortPapers(): void {
+    switch (this.sortOrder) {
+      case 'dateDesc':
+        this.savedPapers.sort((a, b) => b.savedAt.getTime() - a.savedAt.getTime());
+        break;
+      case 'dateAsc':
+        this.savedPapers.sort((a, b) => a.savedAt.getTime() - b.savedAt.getTime());
+        break;
+      case 'alphabetical':
+        this.savedPapers.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+    }
+  }
+
+  onSortChange(): void {
+    this.sortPapers();
   }
 }

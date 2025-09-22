@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router } from '@angular/router';
+import { AppStateService } from "../../app-state.service";
 
 interface Paper {
   id: string;
@@ -27,7 +28,7 @@ export class ResultsComponent implements OnInit {
 
   savedPaperIds = new Set<string>();
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, public appState: AppStateService) {}
 
   exampleResult: Paper = {
     id: '1',

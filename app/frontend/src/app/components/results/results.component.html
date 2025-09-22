@@ -1,36 +1,50 @@
 <div class="results" *ngIf="showResults">
-  <div class="card" *ngFor="let result of [exampleResult]">
+  <!--div class="card" *ngFor="let paper of [exampleResult]">
+  <div class="card" *ngFor="let paper of appState.currentStep.status.papers">
     <div class="result-header">
       <div class="result-title">
-        <h3>{{ result.title }}</h3>
+        <h3>{{ paper.title }}</h3>
         <p class="meta">
-          <i class="fas fa-file-alt"></i> {{ result.authors }} • {{ result.year }} • {{ result.journal }}
+          <i class="fas fa-file-alt"></i> {{ paper.authors }} • {{ paper.year }} • {{ paper.journal }}
         </p>
       </div>
       <span class="relevance" title="Dieser Score basiert auf der semantischen Nähe der Inhalte zur gestellten Forschungsfrage.">
-        {{ result.relevance }}% relevant
+        {{ paper.relevance }}% relevant
       </span>
     </div>
 
-    <p class="abstract">{{ result.abstract }}</p>
+    <p class="abstract">{{ paper.abstract }}</p>
 
     <div class="tags">
-      <span *ngFor="let tag of result.tags">{{ tag }}</span>
+      <span *ngFor="let tag of paper.tags">{{ tag }}</span>
     </div>
 
     <div class="citation">
       <strong><i class="fas fa-quote-right"></i> Zitation:</strong><br />
-      {{ result.citation }}
-      <a [href]="result.doi" target="_blank">{{ result.doi }}</a>
+      {{ paper.citation }}
+      <a [href]="paper.doi" target="_blank">{{ paper.doi }}</a>
     </div>
 
     <div class="actions">
-      <button class="save-link" 
-              [class.saved]="isSaved(result)"
-              (click)="toggleSave(result)">
-        <i class="fas" [ngClass]="isSaved(result) ? 'fa-trash' : 'fa-bookmark'"></i>
-        {{ isSaved(result) ? 'Remove' : 'Save' }}
+      <button class="save-link"
+              [class.saved]="isSaved(paper)"
+              (click)="toggleSave(paper)">
+        <i class="fas" [ngClass]="isSaved(paper) ? 'fa-trash' : 'fa-bookmark'"></i>
+        {{ isSaved(paper) ? 'Remove' : 'Save' }}
       </button>
     </div>
+  </div-->
+  <div class="card">
+  @for (paper of appState.currentStep.status.papers; track paper) {
+    <div class="result-header">
+      <div class="result-title">
+        <h3>{{ paper.article.title }}</h3>
+        <p class="meta">
+          <i class="fas fa-file-alt"></i> {{ paper.article.author }}        </p>
+      </div>
+    </div>
+
+    <p class="abstract">{{ paper.article.abstract }}</p>
+  }
   </div>
 </div>

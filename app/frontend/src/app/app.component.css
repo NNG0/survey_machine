@@ -18,3 +18,7 @@
   gap: 40px;
   flex: 1;
 }
+
+.content-pages {
+  flex: 1;
+}

@@ -5,19 +5,21 @@
   <div class="main-content">
     <!-- Home page content -->
     <!-- Only show the home page content when on the home route -->
-    <div *ngIf="router.url === '/'">
-      <app-hero (search)="onSearch($event)"></app-hero>
+    <div class="content-pages">
+      <div *ngIf="router.url === '/'">
+        <app-hero (search)="onSearch($event)"></app-hero>
 
-      <div class="content-section" *ngIf="showResults">
-        <app-results [showResults]="showResults"></app-results>
-        <app-topics [showTopics]="showTopics"></app-topics>
+        <div class="content-section" *ngIf="showResults">
+          <app-results [showResults]="showResults"></app-results>
+          <app-topics [showTopics]="showTopics"></app-topics>
+        </div>
       </div>
-    </div>
 
-    <!-- Routed pages (e.g., Collection) -->
-    <!-- Only show the router outlet when not on the home route (to prevent showing the home page twice) -->
-    <div *ngIf="router.url !== '/'">
-      <router-outlet />
+      <!-- Routed pages (e.g., Collection) -->
+      <!-- Only show the router outlet when not on the home route (to prevent showing the home page twice) -->
+      <div *ngIf="router.url !== '/'">
+        <router-outlet />
+      </div>
     </div>
 
     <app-footer></app-footer>

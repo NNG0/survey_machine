@@ -10,6 +10,7 @@
         <app-hero (search)="onSearch($event)"></app-hero>
 
         <div class="content-section" *ngIf="showResults">
+          <app-key-questions></app-key-questions>
           <app-results [showResults]="showResults"></app-results>
           <app-topics [showTopics]="showTopics"></app-topics>
         </div>

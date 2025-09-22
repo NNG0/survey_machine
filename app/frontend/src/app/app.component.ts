@@ -10,6 +10,7 @@ import { RESTAPIService } from "./restapiservice.service";
 import { RequestStatus } from "./types/models";
 import { initialRequestStatus } from "./types/state";
 import { AppStateService } from "./app-state.service";
+import { KeyQuestionsComponent } from "./components/key-questions/key-questions.component";
 
 @Component({
   selector: "app-root",
@@ -22,6 +23,7 @@ import { AppStateService } from "./app-state.service";
     ResultsComponent,
     TopicsComponent,
     FooterComponent,
+    KeyQuestionsComponent
   ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.css"],
@@ -43,7 +45,7 @@ export class AppComponent {
         research_question: searchData.query,
       },
     };
-    
+
     this.showResults = true;
     this.showTopics = true;
 
@@ -56,7 +58,6 @@ export class AppComponent {
         console.log("Updated status: ", updatedStatus);
         console.log("Info: ", info);
 
-        // TODO: update state
         this.appState.setCurrentStep(updatedStatus, info);
       },
       error: (err) => {

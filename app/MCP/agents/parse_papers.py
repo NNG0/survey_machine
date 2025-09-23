@@ -55,10 +55,18 @@ async def run_single_parse_papers_agent(
         step_info.add_error(
             f"Rate limit exceeded while parsing paper at index {paper_index}."
         )
+        # Fallback: Set empty lists to allow workflow to continue
+        paper_to_parse.problem_questions = []
+        paper_to_parse.methods = []
+        request_status.papers[paper_index] = paper_to_parse
     elif response == (False,):
         step_info.add_error(
             f"Failed to parse paper at index {paper_index} due to an unknown error."
         )
+        # Fallback: Set empty lists to allow workflow to continue
+        paper_to_parse.problem_questions = []
+        paper_to_parse.methods = []
+        request_status.papers[paper_index] = paper_to_parse
     elif response is not None and isinstance(response, ParsedPaper):
         paper_to_parse.problem_questions = response.problem_questions
         paper_to_parse.methods = response.methods
@@ -68,8 +76,16 @@ async def run_single_parse_papers_agent(
         print(f"Error: {response}")
         print(f"Debug: {paper_to_parse}")
         print(f"Debug: {request_status}")
+        # Fallback: Set empty lists to allow workflow to continue
+        paper_to_parse.problem_questions = []
+        paper_to_parse.methods = []
+        request_status.papers[paper_index] = paper_to_parse
     else:
         step_info.add_warning("Failed to parse paper.")
+        # Fallback: Set empty lists to allow workflow to continue
+        paper_to_parse.problem_questions = []
+        paper_to_parse.methods = []
+        request_status.papers[paper_index] = paper_to_parse
 
     return request_status, step_info
 

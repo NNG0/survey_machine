@@ -18,10 +18,20 @@ async def run_all_create_key_questions_agent(
     step_info = StepInformation()
 
     prompt = f"""
-    You are a research assistant helping to create key questions for a literature review.
-    Your task is to generate {status.settings.num_key_questions} key questions based on the following research question:
-    {status.settings.research_question}
+    You are a research assistant.  
+
+    Generate exactly {status.settings.num_key_questions} key questions for this research question:
+
+    "{status.settings.research_question}"
+
+    Return ONLY a valid JSON array of strings.  
+    Example output:
+    ["What is ...?", "How does ...?", "In which cases ...?"]
+
+    Do not include explanations or additional text.
     """
+
+
     key_questions = await run_basic_ollama_agent(
         name="create_key_questions",
         prompt=prompt,

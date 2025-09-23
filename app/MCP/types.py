@@ -18,6 +18,7 @@ class Article(BaseModel):
     # key_findings: list[str] | None
     problem_questions: list[str] | None
     methods: list[str] | None
+    relevance_score: float | None = None
 
 
 class SurveyResult(BaseModel):

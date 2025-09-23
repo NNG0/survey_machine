@@ -2,11 +2,12 @@ import { Injectable, signal } from "@angular/core";
 import {
   AppState,
   HistoryEntry,
+  RequestStages,
   RequestStatus,
   StepInformation,
   StepState,
 } from "./types/models";
-import { initialAppState } from "./types/state";
+import { initialAppState, orderedRequestStages } from "./types/state";
 
 @Injectable({
   providedIn: "root",
@@ -14,25 +15,38 @@ import { initialAppState } from "./types/state";
 export class AppStateService {
   state = signal<AppState>(initialAppState);
 
+  private getNextStage(currentStage: RequestStages): RequestStages {
+    const currentIndex = orderedRequestStages.indexOf(currentStage)
+
+    return currentIndex >= orderedRequestStages.length - 1 ?
+      currentStage : orderedRequestStages[currentIndex + 1]
+  }
+
+  private getPrevStage(currentStage: RequestStages): RequestStages {
+    const currentIndex = orderedRequestStages.indexOf(currentStage)
+
+    return currentIndex <= 0 ?
+      currentStage : orderedRequestStages[currentIndex - 1]
+  }
+
   setCurrentStep(
     requestStatus: RequestStatus,
     stepInformation: StepInformation,
   ) {
-    const current = this.state();
+    this.state.update(prev => {
+      const newHistoryEntry: HistoryEntry = {
+        id: prev.history.length + 1,
+        state: prev.current_step,
+      };
 
-    const newHistoryEntry: HistoryEntry = {
-      id: current.history.length + 1,
-      state: current.current_step,
-    };
-
-    const new_step: StepState = {
-      status: requestStatus,
-      step_information: stepInformation,
-    };
-
-    this.state.set({
-      current_step: new_step,
-      history: [...current.history, newHistoryEntry],
+      return {
+        current_step: {
+          stage: this.getNextStage(prev.current_step.stage),
+          status: requestStatus,
+          step_information: stepInformation,
+        },
+        history: [...prev.history, newHistoryEntry],
+      }
     });
   }
 

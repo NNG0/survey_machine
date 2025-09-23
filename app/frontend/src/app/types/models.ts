@@ -59,7 +59,7 @@ export interface HistoryEntry {
 export interface StepState {
   status: RequestStatus;
   step_information: StepInformation;
-  //stage: RequestStages;
+  stage: RequestStages;
 }
 
 export interface AppState {

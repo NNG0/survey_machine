@@ -43,10 +43,21 @@ const initialStepInformation: StepInformation = {
   errors: [],
 };
 
+export const orderedRequestStages: RequestStages[] = [
+  RequestStages.CREATING_KEY_QUESTIONS,
+  RequestStages.FINDING_LITERATURE,
+  RequestStages.PARSE_PAPERS,
+  RequestStages.ADJUST_KEY_QUESTIONS,
+  RequestStages.EXTRACT_RELEVANT_RESULTS_FROM_PAPERS,
+  RequestStages.CREATING_DRAFT_HEADINGS,
+  RequestStages.FILLING_DRAFT_CONTENT,
+  RequestStages.FINISHED
+]
+
 const initialStepState: StepState = {
   status: initialRequestStatus,
   step_information: initialStepInformation,
-  // stage: RequestStages.CREATING_KEY_QUESTIONS,
+  stage: orderedRequestStages[0],
 };
 
 export const initialAppState: AppState = {

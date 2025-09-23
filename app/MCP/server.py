@@ -10,6 +10,8 @@ from database.paper_manager import PaperManager
 from pdf_parsers.factory import get_pdf_parser
 
 from .steps import (
+    RequestStatus,
+    StepInformation,
     run_single_next_step,
     run_single_stage,
     run_until_before_stage,

@@ -34,8 +34,8 @@
       </button>
     </div>
   </div-->
-  <div class="card">
   @for (paper of appState.currentStep.status.papers; track paper) {
+  <div class="card">
     <div class="result-header">
       <div class="result-title">
         <h3>{{ paper.article.title }}</h3>
@@ -45,6 +45,6 @@
     </div>
 
     <p class="abstract">{{ paper.article.abstract }}</p>
-  }
   </div>
+  }
 </div>

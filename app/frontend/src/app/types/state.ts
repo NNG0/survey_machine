@@ -1,11 +1,28 @@
 import {
   AppState,
+  Article,
+  RawArticle,
   RequestStages,
   RequestStatus,
   StatusSetting,
   StepInformation,
   StepState,
 } from "./models";
+
+/*
+const exampleResult: RawArticle = {
+    title: 'Example Research Paper Title',
+    abstract: 'This is an example abstract for a research paper. It provides a brief overview of the research conducted and the main findings.',
+    url: 'https://doi.org/10.1000/example',
+    author: 'John Doe, Jane Smith',
+};
+
+const initialArticle: Article = {
+    article: exampleResult,
+    problem_questions: null,
+    methods: null
+}
+*/
 
 const initialStatusSetting: StatusSetting = {
   research_question: "",
@@ -15,6 +32,7 @@ const initialStatusSetting: StatusSetting = {
 
 export const initialRequestStatus: RequestStatus = {
   key_questions: [],
+  // papers: [initialArticle],
   papers: [],
   draft: [],
   settings: initialStatusSetting,

@@ -15,11 +15,11 @@
     </button>
   </div>
 
-  <div class="collection-content" *ngIf="savedPapers.length > 0; else emptyState">
+  <div class="collection-content" *ngIf="appState.currentStep.saved_papers.length > 0; else emptyState">
     <div class="list-toolbar">
       <div class="sort-controls">
         <label for="sortSelect">Sort by:</label>
-        <select id="sortSelect" [(ngModel)]="sortOrder" (change)="onSortChange()">
+        <select id="sortSelect" [(ngModel)]="sortOrder">
           <option value="dateDesc">Date (newest first)</option>
           <option value="dateAsc">Date (oldest first)</option>
           <option value="alphabetical">Alphabetical</option>
@@ -29,40 +29,35 @@
         <i class="fas fa-trash"></i> Delete all
       </button>
     </div>
-    <div class="paper-card" *ngFor="let paper of savedPapers">
+    @for (paper of appState.currentStep.status.papers; track paper) {
+    <div class="paper-card">
       <div class="paper-header">
         <div class="paper-title">
-          <h3>{{ paper.title }}</h3>
+          <h3>{{ paper.article.title }}</h3>
           <p class="meta">
-            <i class="fas fa-file-alt"></i> {{ paper.authors }} • {{ paper.year }} • {{ paper.journal }}
+            <i class="fas fa-file-alt"></i> {{ paper.article.author }}
           </p>
         </div>
         <div class="paper-actions">
           <span class="relevance" title="Relevanz zur Forschungsfrage">
-            {{ paper.relevance }}% relevant
           </span>
-          <button class="remove-btn" (click)="removePaper(paper.id)" title="Aus Sammlung entfernen">
+          <button class="remove-btn"  title="Aus Sammlung entfernen">
             <i class="fas fa-trash"></i>
           </button>
         </div>
       </div>
 
-      <p class="abstract">{{ paper.abstract }}</p>
+      <p class="abstract">{{ paper.article.abstract }}</p>
 
       <div class="tags">
-        <span *ngFor="let tag of paper.tags" class="tag">{{ tag }}</span>
       </div>
 
       <div class="citation">
         <strong><i class="fas fa-quote-right"></i> Citation:</strong><br />
-        {{ paper.citation }}
-        <a [href]="paper.doi" target="_blank">{{ paper.doi }}</a>
-      </div>
-
-      <div class="saved-info">
-        <small><i class="fas fa-clock"></i> Saved at {{ paper.savedAt | date:'dd.MM.yyyy HH:mm' }}</small>
+        <a [href]="paper.article.doi" target="_blank">{{ paper.article.doi }}</a>
       </div>
     </div>
+    }
   </div>
 
   <ng-template #emptyState>
@@ -104,5 +99,5 @@
       <i class="fas fa-pen"></i> Draft
     </button>
   </div>
-  
+
 </div>

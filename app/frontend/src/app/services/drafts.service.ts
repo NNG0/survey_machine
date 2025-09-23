@@ -12,6 +12,8 @@ export interface DraftItem {
   requestStatus: RequestStatus;
 }
 
+type NewType = 'keywords';
+
 @Injectable({ providedIn: 'root' })
 export class DraftsService {
   private storageKey = 'drafts';
@@ -50,7 +52,6 @@ export class DraftsService {
       createdAt: now,
       updatedAt: now,
       keywords: [],
-      status: 'loading',
       requestStatus: {...initialRequestStatus},
     };
     const items = this.readAll();
@@ -61,15 +62,16 @@ export class DraftsService {
 
   update(
     id: string,
-    updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'status' | 'markdown' | 'requestStatus'>>
+    //updates: Partial<Pick<DraftItem, 'title' | NewType | 'status' | 'markdown' | 'requestStatus'>>
   ): DraftItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;
-    const updated: DraftItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+    /*const updated: DraftItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
     items[idx] = updated;
     this.writeAll(items);
-    return updated;
+    */
+    return undefined;
   }
 
   delete(id: string): void {

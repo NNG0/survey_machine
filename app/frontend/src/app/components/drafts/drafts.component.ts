@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
+import { AppStateService } from '../../app-state.service';
 
 @Component({
   selector: 'app-drafts',
@@ -20,37 +21,34 @@ export class DraftsComponent {
   currentDraft: DraftItem | null = null;
   sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
-  constructor(private draftsService: DraftsService) {
+  constructor(private draftsService: DraftsService, private appState: AppStateService) {
     this.load();
   }
 
   load(): void {
-    this.drafts = this.draftsService.getAll();
     this.sortDrafts();
   }
 
   deleteDraft(id: string): void {
-    this.draftsService.delete(id);
     this.load();
   }
 
   openPreviewMarkdown(draft: DraftItem): void {
     // Get fresh draft data from service to ensure we have the latest markdown
-    const freshDraft = this.draftsService.getById(draft.id);
+    const freshDraft = this.appState.getDraftById(draft.id);
     if (!freshDraft) return;
-    
+
     const created = new Date(freshDraft.createdAt).toLocaleString();
     const updated = new Date(freshDraft.updatedAt).toLocaleString();
     const kw = freshDraft.keywords && freshDraft.keywords.length ? `\n\n**Keywords:** ${freshDraft.keywords.join(', ')}` : '';
-    
+
     // Use saved markdown if available, otherwise generate default
     if (freshDraft.markdown) {
       this.previewMarkdown = freshDraft.markdown;
     } else {
       this.previewMarkdown = `# ${freshDraft.title}\n\nCreated: ${created}\n\nUpdated: ${updated}${kw}`;
     }
-    
-    this.currentDraft = freshDraft;
+
     this.editContent = this.previewMarkdown;
     this.isEditing = false;
     this.showPreview = true;
@@ -76,7 +74,6 @@ export class DraftsComponent {
     this.previewMarkdown = this.editContent;
     this.isEditing = false;
     // Save the markdown content to localStorage
-    this.draftsService.update(this.currentDraft.id, { markdown: this.editContent });
     // Reload drafts to get updated data
     this.load();
   }

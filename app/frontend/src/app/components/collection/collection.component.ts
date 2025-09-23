@@ -4,6 +4,7 @@ import { PapersService, PaperCreate } from '../../services/papers.service';
 import { Router } from '@angular/router';
 import { DraftsService } from '../../services/drafts.service';
 import { FormsModule } from '@angular/forms';
+import { AppStateService } from '../../app-state.service';
 
 interface SavedPaper {
   id: string;
@@ -30,63 +31,21 @@ interface SavedPaper {
   styleUrls: ['./collection.component.css']
 })
 export class CollectionComponent implements OnInit {
-  savedPapers: SavedPaper[] = [];
   showDraftModal = false;
   researchQuestions: string[] = [''];
   sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
-  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router) {}
+  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router, public appState: AppStateService) { }
 
   ngOnInit() {
-    this.loadSavedPapers();
-  }
-
-  loadSavedPapers() {
-    this.papersService.getAllPapers().subscribe({
-      next: (papers) => {
-        this.savedPapers = papers.map(p => ({
-          id: p.id,
-          title: p.title,
-          authors: p.authors,
-          year: p.year,
-          journal: 'Academic Journal',
-          abstract: p.abstract,
-          relevance: p.relevance || 0,
-          tags: p.tags || [],
-          citation: p.citation,
-          doi: p.doi,
-          savedAt: new Date(p.savedAt),
-          filename: p.original_filename,
-          contentPreview: p.abstract
-        }));
-        this.sortPapers();
-      },
-      error: (error) => {
-        console.error('Error loading papers:', error);
-        // Fallback to localStorage if API fails
-        this.loadFromLocalStorage();
-      }
-    });
-  }
-
-  private loadFromLocalStorage() {
-    const saved = localStorage.getItem('savedPapers');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      this.savedPapers = parsed.map((p: any) => ({ ...p, savedAt: new Date(p.savedAt) }));
-      this.sortPapers();
-    }
-  }
-
-  persist() {
-    localStorage.setItem('savedPapers', JSON.stringify(this.savedPapers));
+    this.appState.replaceArticlesWithSaved();
   }
 
   removePaper(paperId: string) {
     this.papersService.deletePaper(paperId).subscribe({
       next: () => {
-        this.savedPapers = this.savedPapers.filter(paper => paper.id !== paperId);
-        this.sortPapers();
+        //    this.savedPapers = this.savedPapers.filter(paper => paper.id !== paperId);
+   //     this.sortPapers();
       },
       error: (error) => {
         console.error('Error deleting paper:', error);
@@ -98,16 +57,7 @@ export class CollectionComponent implements OnInit {
   removeAllPapers() {
     const confirmed = confirm('Delete all papers from your collection? This cannot be undone.');
     if (!confirmed) return;
-    this.papersService.deleteAllPapers().subscribe({
-      next: () => {
-        this.savedPapers = [];
-        this.sortPapers();
-      },
-      error: (error) => {
-        console.error('Error deleting all papers:', error);
-        alert('Failed to delete all papers');
-      }
-    });
+    this.appState.removeAllPapers()
   }
 
   onFileSelected(event: Event) {
@@ -130,7 +80,6 @@ export class CollectionComponent implements OnInit {
         if (file.type === 'application/pdf') {
           this.papersService.uploadPDF(paperId, file).subscribe({
             next: () => {
-              this.loadSavedPapers(); // Reload to show new paper
               input.value = ''; // Reset file input
             },
             error: (error) => {
@@ -139,7 +88,6 @@ export class CollectionComponent implements OnInit {
             }
           });
         } else {
-          this.loadSavedPapers(); // Just reload for non-PDF files
           input.value = '';
         }
       },
@@ -183,7 +131,6 @@ export class CollectionComponent implements OnInit {
     const title = `Draft: ${first}`;
     const draft = this.draftsService.create(title);
     if (trimmed.length > 0) {
-      this.draftsService.update(draft.id, { keywords: trimmed.slice(0, 5) });
     }
     this.showDraftModal = false;
     this.router.navigate(['/drafts', draft.id]);
@@ -193,10 +140,10 @@ export class CollectionComponent implements OnInit {
     return index;
   }
 
-  sortPapers(): void {
+/*  sortPapers(): void {
     switch (this.sortOrder) {
       case 'dateDesc':
-        this.savedPapers.sort((a, b) => b.savedAt.getTime() - a.savedAt.getTime());
+        this.appState.currentStep.status.papers.sort((a, b) => b.article.savedAt.getTime() - a.article.savedAt.getTime());
         break;
       case 'dateAsc':
         this.savedPapers.sort((a, b) => a.savedAt.getTime() - b.savedAt.getTime());
@@ -206,8 +153,10 @@ export class CollectionComponent implements OnInit {
         break;
     }
   }
+*/
 
-  onSortChange(): void {
+/*  onSortChange(): void {
     this.sortPapers();
   }
+  */
 }

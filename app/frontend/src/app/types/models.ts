@@ -1,14 +1,27 @@
 export interface RawArticle {
+  id: string;
   title: string | null;
   author: string | null;
+  savedAt: string | null;
   abstract: string | null;
   url: string | null;
+  doi?: string | null;
 }
 
 export interface Article {
   article: RawArticle;
   problem_questions: string[] | null;
   methods: string[] | null;
+}
+
+export interface DraftItem {
+  id: string;
+  title: string;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  keywords?: string[];
+  markdown?: string;
+  content: string | null;
 }
 
 export interface SurveyResult {
@@ -31,7 +44,7 @@ export type KeyQuestion = [string, string[] | null, SurveyResult | null];
 export interface RequestStatus {
   key_questions: [string, string[] | null, SurveyResult | null][] | null;
   papers: Article[];
-  draft: DraftHeading[];
+  draft: DraftItem[];
   settings: StatusSetting;
 }
 
@@ -60,6 +73,7 @@ export interface StepState {
   status: RequestStatus;
   step_information: StepInformation;
   stage: RequestStages;
+  saved_papers: Article[];
 }
 
 export interface AppState {

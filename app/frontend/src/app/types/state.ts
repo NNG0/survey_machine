@@ -55,9 +55,10 @@ export const orderedRequestStages: RequestStages[] = [
 ]
 
 const initialStepState: StepState = {
-  status: initialRequestStatus,
-  step_information: initialStepInformation,
-  stage: orderedRequestStages[0],
+    status: initialRequestStatus,
+    step_information: initialStepInformation,
+    stage: orderedRequestStages[0],
+    saved_papers: []
 };
 
 export const initialAppState: AppState = {

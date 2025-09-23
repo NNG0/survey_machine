@@ -43,7 +43,7 @@ export class DraftDetailComponent {
   }
 
   save(): void {
-    const updated = this.draftsService.update(this.draft.id, { title: this.titleEdit });
+    const updated = this.draftsService.update(this.draft.id, );
     if (updated) {
       this.draft = updated;
     }
@@ -53,10 +53,7 @@ export class DraftDetailComponent {
   private scheduleAutoSave() {
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
-      const updated = this.draftsService.update(this.draft.id, {
-        title: this.titleEdit,
-        requestStatus: this.draft.requestStatus,
-      });
+      const updated = this.draftsService.update(this.draft.id);
       if (updated) {
         this.draft = updated;
       }
@@ -98,10 +95,7 @@ export class DraftDetailComponent {
         this.draft.requestStatus = newStatus;
         this.warnings = stepInfo.warnings || [];
         this.errors = stepInfo.errors || [];
-        const updated = this.draftsService.update(this.draft.id, {
-          title: this.titleEdit,
-          requestStatus: this.draft.requestStatus,
-        });
+        const updated = this.draftsService.update(this.draft.id,    );
         if (updated) this.draft = updated;
 
         // Also update the next step info by calling nextStep again

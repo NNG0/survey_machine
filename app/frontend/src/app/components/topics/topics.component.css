@@ -10,6 +10,44 @@
   font-weight: 600;
 }
 
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 30px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  white-space: nowrap;
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color 0.2s ease, transform 0.05s ease;
+}
+
+.btn i {
+  font-size: 16px;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.collection-btn {
+  background: #6c47ff;
+  color: white;
+}
+
+.collection-btn:hover {
+  background: #5a3bd6;
+}
+
 .cluster-graph {
   width: 100%;
   border-radius: 10px;

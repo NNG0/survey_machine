@@ -1,10 +1,20 @@
 <div class="drafts-container">
   <div class="drafts-header">
     <h2><i class="fas fa-file-alt"></i> Drafts</h2>
-    <p class="subtitle">Your in-progress drafts</p>
+    <p class="subtitle">⑤ Manage your drafts, edit them and save them. </p>
   </div>
 
   <div class="drafts-content" *ngIf="drafts.length > 0; else emptyState">
+    <div class="list-toolbar">
+      <div class="sort-controls">
+        <label for="sortSelect">Sort by:</label>
+        <select id="sortSelect" [(ngModel)]="sortOrder" (change)="onSortChange()">
+          <option value="dateDesc">Date (newest first)</option>
+          <option value="dateAsc">Date (oldest first)</option>
+          <option value="alphabetical">Alphabetical</option>
+        </select>
+      </div>
+    </div>
     <div class="paper-card" *ngFor="let d of drafts">
       <div class="paper-header">
         <div class="paper-title">
@@ -25,8 +35,8 @@
       </div>
 
       <div class="saved-info">
-        <button class="btn view-edit" [disabled]="d.status !== 'ready'" (click)="openPreviewMarkdown(d)">
-          <i class="fas fa-eye"></i> {{ d.status === 'ready' ? 'View/Edit' : 'Loading…' }}
+        <button class="btn view-edit" (click)="openPreviewMarkdown(d)">
+          <i class="fas fa-eye"></i> View
         </button>
       </div>
     </div>
@@ -45,9 +55,27 @@
 <div class="modal" *ngIf="showPreview">
   <div class="modal-header">
     <h3>Draft preview</h3>
-    <button class="close-btn" (click)="closePreview()">×</button>
+    <div class="header-actions">
+      <button class="btn edit-btn" (click)="toggleEdit()" *ngIf="!isEditing">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button class="close-btn" (click)="closePreview()">×</button>
+    </div>
   </div>
-  <pre class="markdown">{{ previewMarkdown }}</pre>
+  <div class="modal-body">
+    <pre class="markdown" *ngIf="!isEditing">{{ previewMarkdown }}</pre>
+    <div class="edit-mode" *ngIf="isEditing">
+      <textarea [(ngModel)]="editContent" class="markdown-editor" placeholder="Edit your draft content..."></textarea>
+      <div class="edit-actions">
+        <button class="btn save-btn" (click)="saveEdit()">
+          <i class="fas fa-save"></i> Save
+        </button>
+        <button class="btn cancel-btn" (click)="cancelEdit()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 

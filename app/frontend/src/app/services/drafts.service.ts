@@ -8,7 +8,6 @@ export interface DraftItem {
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   keywords?: string[];
-  status: 'loading' | 'ready';
   markdown?: string;
   requestStatus: RequestStatus;
 }
@@ -57,13 +56,6 @@ export class DraftsService {
     const items = this.readAll();
     items.unshift(item);
     this.writeAll(items);
-    // Simulate background processing; mark as ready after a short delay
-    setTimeout(() => {
-      this.update(item.id, {
-        status: 'ready',
-        markdown: `# ${title}\n\nThis is a generated draft.\n\n- Created: ${new Date(item.createdAt).toLocaleString()}\n- Updated: ${new Date().toLocaleString()}`
-      });
-    }, 2000);
     return item;
   }
 

@@ -35,7 +35,49 @@
 
 .list-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-controls label {
+  font-weight: 600;
+  color: #2f2f8a;
+}
+
+.sort-controls select {
+  padding: 8px 12px;
+  border: 1px solid #6c47ff;
+  border-radius: 8px;
+  background: white;
+  color: #2f2f8a;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236c47ff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+.sort-controls select:hover {
+  border-color: #5a3bd6;
+  background-color: #f8f7ff;
+}
+
+.sort-controls select:focus {
+  outline: none;
+  border-color: #5a3bd6;
+  box-shadow: 0 0 0 3px rgba(108, 71, 255, 0.1);
 }
 
 .remove-all-btn {
@@ -253,3 +295,19 @@
     width: 100%;
   }
 }
+
+/* Modal for drafting */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); }
+.modal { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #fff; width: min(800px, 90vw); max-height: 85vh; overflow: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 16px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.close-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; }
+.modal-body { display: flex; flex-direction: column; gap: 12px; }
+.rq-list { display: flex; flex-direction: column; gap: 12px; }
+.rq-item label { display: block; margin-bottom: 6px; color: #2f2f8a; font-weight: 600; }
+.rq-row { display: flex; gap: 8px; align-items: center; }
+.rq-row input[type="text"] { flex: 1; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; }
+.rq-remove { background: #ffe6e6; color: #d32f2f; border: none; padding: 8px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
+.rq-remove:hover { background: #ffcccc; }
+.add-btn { background: #f0f0ff; color: #2f2f8a; }
+.add-btn:hover { background: #e6e6ff; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }

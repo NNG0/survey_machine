@@ -6,13 +6,19 @@ import {
   RequestStatus,
   StepInformation,
   StepState,
-} from "./types/models";
-import { initialAppState, orderedRequestStages } from "./types/state";
+} from "../../types/models";
+import { initialAppState, orderedRequestStages } from "../../types/state";
+import { ArticleStore } from "./article.store";
+import { DraftsStore } from "./draft.store";
 
 @Injectable({
   providedIn: "root",
 })
 export class AppStateService {
+  constructor(
+    private articleStore: ArticleStore,
+    private draftStore: DraftsStore
+  ) { }
   state = signal<AppState>(initialAppState);
 
   private getNextStage(currentStage: RequestStages): RequestStages {
@@ -40,7 +46,9 @@ export class AppStateService {
       };
 
       return {
+        ...prev,
         current_step: {
+          ...prev.current_step,
           stage: this.getNextStage(prev.current_step.stage),
           status: requestStatus,
           step_information: stepInformation,
@@ -52,6 +60,34 @@ export class AppStateService {
 
   resetState() {
     this.state.set(initialAppState);
+  }
+
+  replaceArticlesAndRemoveSaved() {
+    this.state.update(prev => {
+      return {
+        ...prev,
+        current_step: {
+          ...prev.current_step,
+          saved_papers: [],
+          status: {
+            ...prev.current_step.status,
+            papers: [...prev.current_step.saved_papers]
+          }
+        }
+      }
+    })
+  }
+
+  removeAllPapers() {
+    this.state.update(prev => {
+      return {
+        ...prev,
+        current_step: {
+          ...prev.current_step,
+          saved_papers: []
+        }
+      }
+    })
   }
 
   get currentStep(): StepState {

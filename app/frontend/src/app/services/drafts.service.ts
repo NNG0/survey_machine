@@ -8,10 +8,11 @@ export interface DraftItem {
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   keywords?: string[];
-  status: 'loading' | 'ready';
   markdown?: string;
   requestStatus: RequestStatus;
 }
+
+type NewType = 'keywords';
 
 @Injectable({ providedIn: 'root' })
 export class DraftsService {
@@ -51,33 +52,26 @@ export class DraftsService {
       createdAt: now,
       updatedAt: now,
       keywords: [],
-      status: 'loading',
       requestStatus: {...initialRequestStatus},
     };
     const items = this.readAll();
     items.unshift(item);
     this.writeAll(items);
-    // Simulate background processing; mark as ready after a short delay
-    setTimeout(() => {
-      this.update(item.id, {
-        status: 'ready',
-        markdown: `# ${title}\n\nThis is a generated draft.\n\n- Created: ${new Date(item.createdAt).toLocaleString()}\n- Updated: ${new Date().toLocaleString()}`
-      });
-    }, 2000);
     return item;
   }
 
   update(
     id: string,
-    updates: Partial<Pick<DraftItem, 'title' | 'keywords' | 'status' | 'markdown' | 'requestStatus'>>
+    //updates: Partial<Pick<DraftItem, 'title' | NewType | 'status' | 'markdown' | 'requestStatus'>>
   ): DraftItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;
-    const updated: DraftItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+    /*const updated: DraftItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
     items[idx] = updated;
     this.writeAll(items);
-    return updated;
+    */
+    return undefined;
   }
 
   delete(id: string): void {

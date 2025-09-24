@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule, Router } from "@angular/router";
 import { HeaderComponent } from "./components/header/header.component";
@@ -6,11 +6,13 @@ import { HeroComponent } from "./components/hero/hero.component";
 import { ResultsComponent } from "./components/results/results.component";
 import { TopicsComponent } from "./components/topics/topics.component";
 import { FooterComponent } from "./components/footer/footer.component";
-import { RESTAPIService } from "./restapiservice.service";
-import { RequestStatus } from "./types/models";
+import { Article, RawArticle, RequestStatus } from "./types/models";
 import { initialRequestStatus } from "./types/state";
-import { AppStateService } from "./app-state.service";
+import { AppStateService } from "./services/state/app-state.service";
 import { KeyQuestionsComponent } from "./components/key-questions/key-questions.component";
+import { PapersService } from "./services/papers.service";
+import { RESTAPIService } from "./services/restapiservice.service";
+import { ArticleStore } from "./services/state/article.store";
 
 @Component({
   selector: "app-root",
@@ -28,16 +30,31 @@ import { KeyQuestionsComponent } from "./components/key-questions/key-questions.
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.css"],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
     private restApiService: RESTAPIService,
     private appState: AppStateService,
     public router: Router,
-  ) {}
+    private papersService: PapersService,
+    private articleStore: ArticleStore,
+  ) { }
+  ngOnInit(): void {
+    this.papersService.getAllPapers().subscribe({
+      next: (papers:Article[]) => {
+        papers.map(p => {
+          this.articleStore.addPaper(p)
+        });
+      },
+      error: (error) => {
+        console.error('Error loading papers:', error);
+      }
+    });
+  }
+
   showResults = false;
   showTopics = false;
 
-  onSearch(searchData: {query: string, filters: any}) {
+  onSearch(searchData: { query: string, filters: any }) {
     let requestStatus: RequestStatus = {
       ...initialRequestStatus,
       settings: {

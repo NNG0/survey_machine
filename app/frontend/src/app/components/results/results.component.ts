@@ -1,7 +1,9 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router } from '@angular/router';
-import { AppStateService } from "../../app-state.service";
+import { AppStateService } from "../../services/state/app-state.service";
+import { Article } from "../../types/models";
+import { ArticleStore } from "../../services/state/article.store";
 
 interface Paper {
   id: string;
@@ -23,12 +25,10 @@ interface Paper {
   templateUrl: "./results.component.html",
   styleUrls: ["./results.component.css"],
 })
-export class ResultsComponent implements OnInit {
+export class ResultsComponent {
   @Input() showResults = false;
 
-  savedPaperIds = new Set<string>();
-
-  constructor(private router: Router, public appState: AppStateService) {}
+  constructor(private router: Router, public appState: AppStateService, private articleStore: ArticleStore) {}
 
   exampleResult: Paper = {
     id: '1',
@@ -43,49 +43,11 @@ export class ResultsComponent implements OnInit {
     doi: 'https://doi.org/10.1000/example'
   };
 
-  ngOnInit() {
-    this.refreshSavedIds();
+  isSaved(article: Article): boolean {
+    return this.articleStore.isArticleSaved(article)
   }
 
-  private refreshSavedIds() {
-    const saved = localStorage.getItem('savedPapers');
-    this.savedPaperIds.clear();
-    if (saved) {
-      try {
-        const arr = JSON.parse(saved) as Array<{ id: string }>;
-        for (const p of arr) this.savedPaperIds.add(p.id);
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }
-
-  isSaved(paper: Paper): boolean {
-    return this.savedPaperIds.has(paper.id);
-  }
-
-  toggleSave(paper: Paper) {
-    const savedRaw = localStorage.getItem('savedPapers');
-    let saved: any[] = [];
-    if (savedRaw) {
-      try { saved = JSON.parse(savedRaw); } catch { saved = []; }
-    }
-
-    if (this.isSaved(paper)) {
-      // remove
-      saved = saved.filter((p: any) => p.id !== paper.id);
-      localStorage.setItem('savedPapers', JSON.stringify(saved));
-      this.savedPaperIds.delete(paper.id);
-    } else {
-      // save
-      const paperToSave = { ...paper, savedAt: new Date() };
-      // avoid duplicates just in case
-      const exists = saved.some((p: any) => p.id === paper.id);
-      if (!exists) {
-        saved.push(paperToSave);
-        localStorage.setItem('savedPapers', JSON.stringify(saved));
-        this.savedPaperIds.add(paper.id);
-      }
-    }
+  toggleSave(article: Article) {
+    this.articleStore.toggleSavedPaper(article)
   }
 }

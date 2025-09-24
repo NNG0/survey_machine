@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { RequestStages, RequestStatus, StepInformation } from "./types/models";
 import { Observable } from "rxjs";
+import { RequestStages, RequestStatus, StepInformation } from "../types/models";
 
 @Injectable({
   providedIn: "root",

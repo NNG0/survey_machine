@@ -45,6 +45,15 @@
     </div>
 
     <p class="abstract">{{ paper.article.abstract }}</p>
+
+    <div class="actions">
+      <button class="save-link"
+              [class.saved]="isSaved(paper)"
+              (click)="toggleSave(paper)">
+        <i class="fas" [ngClass]="isSaved(paper) ? 'fa-trash' : 'fa-bookmark'"></i>
+        {{ isSaved(paper) ? 'Remove' : 'Save' }}
+      </button>
+    </div>
   </div>
   }
 </div>

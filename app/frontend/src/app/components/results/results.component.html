@@ -42,6 +42,9 @@
         <p class="meta">
           <i class="fas fa-file-alt"></i> {{ paper.article.author }}        </p>
       </div>
+      <div class="score-badge">
+        {{ ((paper.relevance_score ?? 0) * 100) | number:'1.0-0' }}% relevant
+      </div>
     </div>
 
     <p class="abstract">{{ paper.article.abstract }}</p>

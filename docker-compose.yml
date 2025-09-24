@@ -23,7 +23,7 @@ services:
       - GROBID_HOST=host.docker.internal
       - AM_I_IN_DOCKER=true
     volumes:
-      - survey-machine-db:/data
+      - ./docker-data/db:/data
     depends_on:
       ollama:
         condition: service_started
@@ -63,7 +63,7 @@ services:
       - DATABASE_PATH=/data
       - AM_I_IN_DOCKER=true
     volumes:
-      - survey-machine-db:/data
+      - ./docker-data/db:/data
     command: python -m literature_access.main --port 8000
     networks:
       survey-machine:
@@ -90,5 +90,5 @@ networks:
     driver: bridge
     # network_backend: netavark
 
-volumes:
-  survey-machine-db:
+# Persist database files even after container removal
+volumes: {}

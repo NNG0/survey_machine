@@ -20,7 +20,7 @@
 }
 
 .result-title {
-  max-width: 85%;
+  max-width: 75%;
 }
 
 .result-title h3 {
@@ -28,6 +28,20 @@
   font-size: 1.3rem;
   font-weight: 600;
   color: #222;
+}
+
+.score-badge {
+  background-color: #eef0ff;
+  color: #3f51b5;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  height: 36px;
 }
 
 .meta {

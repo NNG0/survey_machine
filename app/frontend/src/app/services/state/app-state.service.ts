@@ -58,6 +58,23 @@ export class AppStateService {
     });
   }
 
+  hydrateFromBackend(
+    requestStatus: RequestStatus,
+    stepInformation: StepInformation | undefined,
+    stageOverride?: RequestStages,
+  ) {
+    this.state.update(prev => ({
+      ...prev,
+      current_step: {
+        ...prev.current_step,
+        status: requestStatus,
+        step_information: stepInformation ?? { warnings: [], errors: [] },
+        stage: stageOverride ?? prev.current_step.stage,
+        saved_papers: requestStatus?.papers ? [...requestStatus.papers] : [],
+      },
+    }));
+  }
+
   resetState() {
     this.state.set(initialAppState);
     this.workflowId = null;

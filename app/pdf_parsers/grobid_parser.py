@@ -17,12 +17,7 @@ class GrobidParser(PDFParser):
         elif os.getenv("AM_I_IN_DOCKER", "false") == "true":
             # Reihenfolge: Docker intern → evtl. alternative Ports → Host
             host_override = os.getenv("GROBID_HOST")
-            self.grobid_urls = [
-                "http://grobid:8070",
-                "http://grobid:8090",
-                "http://host.docker.internal:8070",
-                "http://host.docker.internal:8090",
-            ]
+            self.grobid_urls = ["http://host.docker.internal:8070"]
             if host_override:
                 self.grobid_urls.insert(0, f"http://{host_override}:8070")
         else:

@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/state/app-state.service';
 import { ArticleStore } from '../../services/state/article.store';
 import { RESTAPIService } from '../../services/restapiservice.service';
+import { Article, RequestStages, StepInformation } from '../../types/models';
 
 @Component({
   selector: 'app-collection',
@@ -17,6 +18,8 @@ import { RESTAPIService } from '../../services/restapiservice.service';
 })
 export class CollectionComponent implements OnInit {
   showDraftModal = false;
+  showRQModal = false;
+  uploadedFile: File | null = null;
   researchQuestions: string[] = [''];
 
   constructor(
@@ -32,8 +35,32 @@ export class CollectionComponent implements OnInit {
     this.articleStore.replaceArticlesWithSaved();
   }
 
-  removePaper(paperId: string) {
-    this.articleStore.removePaperById(paperId);
+  removePaper(article: Article) {
+    const id = article?.article?.id ?? article?.article?.url ?? article?.article?.title;
+    if (!id) {
+      console.warn('Cannot remove paper without identifier', article);
+      return;
+    }
+
+    this.articleStore.removePaperById(id);
+
+    const updatedStatus = structuredClone(this.appState.currentStep.status);
+    const workflowId = this.appState.currentWorkflowId;
+
+    const persistence$ = workflowId
+      ? this.restApi.updateWorkflowStatus(workflowId, updatedStatus)
+      : this.restApi.createWorkflowStatus(updatedStatus);
+
+    persistence$.subscribe({
+      next: (persisted) => {
+        if (persisted?.workflow_id) {
+          this.appState.setWorkflowId(persisted.workflow_id);
+        }
+      },
+      error: (error) => {
+        console.warn('Failed to persist workflow after removal:', error);
+      }
+    });
   }
 
   removeAllPapers() {
@@ -53,6 +80,23 @@ export class CollectionComponent implements OnInit {
       return;
     }
 
+    // Check if research question exists
+    const currentRQ = this.appState.currentStep.status.settings.research_question?.trim();
+    console.log('Current research question:', currentRQ);
+    console.log('Will show popup:', !currentRQ);
+
+    if (!currentRQ) {
+      this.uploadedFile = file;
+      this.researchQuestions = ['']; // Reset research questions
+      this.showRQModal = true;
+      console.log('Showing RQ modal');
+      return;
+    }
+
+    this.performUpload(file, input);
+  }
+
+  private performUpload(file: File, input?: HTMLInputElement) {
     console.log('Uploading PDF:', file.name);
 
     const status = structuredClone(this.appState.currentStep.status);
@@ -63,21 +107,17 @@ export class CollectionComponent implements OnInit {
         console.log('Upload response:', response);
 
         if (response.request_status) {
-          this.appState.setCurrentStep(response.request_status, {
-            warnings: response.warnings || [],
-            errors: response.errors || [],
-          });
+          const stepInfo: StepInformation = {
+            warnings: [],
+            errors: [],
+          };
+
+          const stage = response.workflow_finished ? RequestStages.FINISHED : undefined;
+          this.appState.hydrateFromBackend(response.request_status, stepInfo, stage);
         }
 
         if (response.workflow_id) {
           this.appState.setWorkflowId(response.workflow_id);
-        }
-
-        // Update article store mit neuen Papers
-        if (response.request_status?.papers) {
-          response.request_status.papers.forEach((paper: any) => {
-            this.articleStore.addPaper(paper);
-          });
         }
 
         alert('PDF erfolgreich hochgeladen! Relevance Score wird berechnet...');
@@ -87,7 +127,7 @@ export class CollectionComponent implements OnInit {
         alert('Upload fehlgeschlagen: ' + (err.error?.detail || err.message));
       },
       complete: () => {
-        input.value = ''; // Reset file input
+        if (input) input.value = ''; // Reset file input
       },
     });
 
@@ -147,6 +187,39 @@ export class CollectionComponent implements OnInit {
 
   closeDraftModal() {
     this.showDraftModal = false;
+  }
+
+  closeRQModal() {
+    this.showRQModal = false;
+    this.uploadedFile = null;
+  }
+
+  submitRQAndUpload() {
+    const rq = this.researchQuestions[0]?.trim();
+    if (!rq || !this.uploadedFile) {
+      alert('Please enter a research question.');
+      return;
+    }
+
+    // Update AppState with research question
+    this.appState.state.update(prev => ({
+      ...prev,
+      current_step: {
+        ...prev.current_step,
+        status: {
+          ...prev.current_step.status,
+          settings: {
+            ...prev.current_step.status.settings,
+            research_question: rq
+          }
+        }
+      }
+    }));
+
+    // Now perform the upload
+    this.performUpload(this.uploadedFile);
+
+    this.closeRQModal();
   }
 
   submitDraft() {

@@ -110,7 +110,7 @@ def get_openai_settings():
         # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
     else:
         # default_model = "qwen3:0.6b"
-        default_model = "llama3.2:1b"
+        default_model = "llama3.2:3b"
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
@@ -153,7 +153,7 @@ async def recompute_relevance_scores(request_status: RequestStatus):
     if not request_status.papers:
         return
 
-    research_question = getattr(request_status.settings, "research_question", "")
+    research_question = getattr(request_status.settings, "research_question", "") or "Academic research paper"
     if not research_question:
         return
 

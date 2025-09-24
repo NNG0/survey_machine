@@ -36,8 +36,14 @@
       </div>
 
       <div class="saved-info">
-        <button class="btn view-edit" (click)="openPreviewMarkdown(d)">
+        <button class="btn view-edit" (click)="openPreviewMarkdown(d)" *ngIf="d.markdown">
           <i class="fas fa-eye"></i> View
+        </button>
+        <button class="btn view-edit" *ngIf="!d.markdown" disabled title="No preview available">
+          <i class="fas fa-eye-slash"></i> View
+        </button>
+        <button class="btn edit-btn" [routerLink]="['/drafts', d.id]" target="_blank">
+          <i class="fas fa-edit"></i> Edit
         </button>
       </div>
     </div>
@@ -57,24 +63,10 @@
   <div class="modal-header">
     <h3>Project Draft preview</h3>
     <div class="header-actions">
-      <button class="btn edit-btn" (click)="toggleEdit()" *ngIf="!isEditing">
-        <i class="fas fa-edit"></i> Edit
-      </button>
       <button class="close-btn" (click)="closePreview()">×</button>
     </div>
   </div>
   <div class="modal-body">
-    <pre class="markdown" *ngIf="!isEditing">{{ previewMarkdown }}</pre>
-    <div class="edit-mode" *ngIf="isEditing">
-      <textarea [(ngModel)]="editContent" class="markdown-editor" placeholder="Edit your draft content..."></textarea>
-      <div class="edit-actions">
-        <button class="btn save-btn" (click)="saveEdit()">
-          <i class="fas fa-save"></i> Save
-        </button>
-        <button class="btn cancel-btn" (click)="cancelEdit()">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </div>
+    <div class="markdown" *ngIf="previewMarkdown" [innerHTML]="previewMarkdown"></div>
   </div>
 </div>

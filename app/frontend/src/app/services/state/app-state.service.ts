@@ -8,16 +8,12 @@ import {
   StepState,
 } from "../../types/models";
 import { initialAppState, orderedRequestStages } from "../../types/state";
-import { ArticleStore } from "./article.store";
-import { DraftsStore } from "./draft.store";
 
 @Injectable({
   providedIn: "root",
 })
 export class AppStateService {
   constructor(
-    private articleStore: ArticleStore,
-    private draftStore: DraftsStore
   ) { }
   state = signal<AppState>(initialAppState);
 

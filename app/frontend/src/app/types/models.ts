@@ -13,8 +13,15 @@ export interface Article {
   problem_questions: string[] | null;
   methods: string[] | null;
 }
+export interface DraftHeading {
+  title: string;
+  content: string | null;
+}
 
-export interface DraftItem {
+// Note: Due to how interfaces are handled in TypeScript's type system (It's Just A Dict),
+// the DraftItem interface can be used in place of the DraftHeading. This is why it extends DraftHeading.
+// On the python side, the DraftItem is read as a dict with extra fields, which are simply ignored.
+export interface DraftItem extends DraftHeading{
   id: string;
   title: string;
   createdAt: string; // ISO string
@@ -34,10 +41,6 @@ export interface StatusSetting {
   num_key_questions: number; // Defaults to 5 in backend
 }
 
-export interface DraftHeading {
-  title: string;
-  content: string | null;
-}
 
 export type KeyQuestion = [string, string[] | null, SurveyResult | null];
 

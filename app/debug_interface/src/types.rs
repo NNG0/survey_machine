@@ -3,11 +3,15 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RawArticle {
+    pub id: String,
     pub title: Option<String>,
     pub author: Option<String>,
+    #[serde(rename = "savedAt")]
+    pub saved_at: Option<String>,
     #[serde(rename = "abstract")]
     pub abstract_: Option<String>,
     pub url: Option<String>,
+    pub doi: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

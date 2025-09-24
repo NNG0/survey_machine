@@ -1,6 +1,14 @@
 from typing import Optional, Tuple
 from .base import run_basic_ollama_agent
-from ..types import Article, RawArticle, RequestStatus, StepInformation, OpenRouter
+from ..types import (
+    Article,
+    LLMArticle,
+    RawArticle,
+    RequestStatus,
+    StepInformation,
+    OpenRouter,
+    convert_llm_article_to_raw_article,
+)
 
 
 async def run_relevant_literature_agent(
@@ -21,7 +29,7 @@ async def run_relevant_literature_agent(
         name="relevant_literature_agent",
         prompt=prompt,
         server_list=["literature_access", "fetch"],
-        output_type=list[RawArticle],
+        output_type=list[LLMArticle],
         custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
     # if response == (True,):
@@ -44,9 +52,13 @@ async def run_relevant_literature_agent(
             "Failed to fetch relevant literature due to an unknown error."
         )
     elif isinstance(response, list) and all(
-        isinstance(article, RawArticle) for article in response
+        isinstance(article, LLMArticle) for article in response
     ):
-        return response, step_info
+        # Convert LLMArticle to RawArticle
+        rawArticles = [
+            convert_llm_article_to_raw_article(article) for article in response
+        ]
+        return rawArticles, step_info
     else:
         step_info.add_warning("Unexpected response from relevant literature agent.")
 

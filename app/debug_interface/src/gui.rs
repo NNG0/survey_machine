@@ -1,12 +1,9 @@
-use std::{
-    sync::mpsc::{Receiver, Sender},
-    time::SystemTime,
-};
+use std::sync::mpsc::{Receiver, Sender};
 
-use eframe::App;
 use egui::{RichText, TextEdit};
 use egui_commonmark::CommonMarkCache;
 use log::info;
+use rand::Rng;
 use reqwest::blocking::Client;
 
 use crate::types::{
@@ -628,10 +625,17 @@ impl RequestStatus {
                             problem_questions: None,
                             methods: None,
                             article: RawArticle {
+                                id: rand::rng()
+                                    .sample_iter(&rand::distr::Alphanumeric)
+                                    .take(20)
+                                    .map(char::from)
+                                    .collect(),
                                 title: None,
                                 author: None,
                                 abstract_: None,
+                                saved_at: None,
                                 url: None,
+                                doi: None,
                             },
                         });
                     }));

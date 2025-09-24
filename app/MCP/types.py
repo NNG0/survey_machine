@@ -1,16 +1,46 @@
+from datetime import datetime
 from enum import Enum
 from typing import Self
+from random import random
 
 from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
 
 from pydantic import BaseModel, Field
 
 
+class LLMArticle(BaseModel):
+    title: str | None
+    abstract: str | None
+    author: str | None
+    url: str | None
+    doi: str | None
+
+
 class RawArticle(BaseModel):
+    id: str  # Just any unique identifier for the article, we'll use doi if it's available, else url, else random.
     title: str | None
     author: str | None
+    savedAt: str | None  # Date when the article was saved to the system.
     abstract: str | None
     url: str | None
+    doi: str | None
+
+
+def convert_llm_article_to_raw_article(article: LLMArticle) -> RawArticle:
+    """Converts an LLMArticle to a RawArticle."""
+    return RawArticle(
+        id=article.doi
+        if article.doi
+        else (
+            article.url if article.url else f"random-{random().hex}"
+        ),  # Random hex string if neither doi nor url is available.
+        title=article.title,
+        author=article.author,
+        savedAt=datetime.now().isoformat(),
+        abstract=article.abstract,
+        url=article.url,
+        doi=article.doi,
+    )
 
 
 class Article(BaseModel):

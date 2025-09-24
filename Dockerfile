@@ -12,13 +12,17 @@ COPY app/requirements.txt ./app/requirements.txt
 RUN uv pip install --system --no-cache-dir -r ./app/requirements.txt
 
 # Copy the rest of the application code
-COPY app/frontend ./app/frontend
-COPY app/literature_access ./app/literature_access
-COPY app/MCP ./app/MCP
+COPY app ./app
 COPY .env /.env
 
+# Erstelle das Verzeichnis für persistente Daten
+RUN mkdir -p /data && chmod 755 /data
+
 ENV AM_I_IN_DOCKER=true
+ENV DATABASE_PATH=/data
+ENV HF_HOME=/data/hf-cache
+ENV TRANSFORMERS_CACHE=/data/hf-cache
+ENV TORCH_HOME=/data/hf-cache
 
 WORKDIR /app/app
-CMD ["fastapi", "run", "MCP/server.py", "--host", "0.0.0.0", "--port", "8001"]
-# It's on 8001 to not conflict with the main FastAPI app on port 8000
+CMD ["uvicorn", "MCP.server:app", "--host", "0.0.0.0", "--port", "8001"]

@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv
+venv
+
+# Datenbanken
+*.db
+
+# PDFs, Logs
+*.pdf
+*.log
+
+app/frontend/node_modules
+app/frontend/dist
+app/frontend/build

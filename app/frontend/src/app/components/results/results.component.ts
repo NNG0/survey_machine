@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router } from '@angular/router';
-import { AppStateService } from "../../app-state.service";
+import { AppStateService } from "../../services/state/app-state.service";
 import { Article } from "../../types/models";
 
 interface Paper {

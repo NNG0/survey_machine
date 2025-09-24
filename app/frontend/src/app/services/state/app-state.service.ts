@@ -8,8 +8,8 @@ import {
   RequestStatus,
   StepInformation,
   StepState,
-} from "./types/models";
-import { initialAppState, orderedRequestStages } from "./types/state";
+} from "../../types/models";
+import { initialAppState, orderedRequestStages } from "../../types/state";
 
 @Injectable({
   providedIn: "root",

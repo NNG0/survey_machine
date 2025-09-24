@@ -4,24 +4,7 @@ import { PapersService, PaperCreate } from '../../services/papers.service';
 import { Router } from '@angular/router';
 import { DraftsService } from '../../services/drafts.service';
 import { FormsModule } from '@angular/forms';
-import { AppStateService } from '../../app-state.service';
-
-interface SavedPaper {
-  id: string;
-  title: string;
-  authors: string;
-  year: number;
-  journal: string;
-  abstract: string;
-  relevance: number;
-  tags: string[];
-  citation: string;
-  doi: string;
-  savedAt: Date;
-  // Additional optional fields for uploads
-  filename?: string;
-  contentPreview?: string;
-}
+import { AppStateService } from '../../services/state/app-state.service';
 
 @Component({
   selector: 'app-collection',
@@ -33,7 +16,6 @@ interface SavedPaper {
 export class CollectionComponent implements OnInit {
   showDraftModal = false;
   researchQuestions: string[] = [''];
-  sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
   constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router, public appState: AppStateService) { }
 
@@ -42,16 +24,7 @@ export class CollectionComponent implements OnInit {
   }
 
   removePaper(paperId: string) {
-    this.papersService.deletePaper(paperId).subscribe({
-      next: () => {
-        //    this.savedPapers = this.savedPapers.filter(paper => paper.id !== paperId);
-   //     this.sortPapers();
-      },
-      error: (error) => {
-        console.error('Error deleting paper:', error);
-        alert('Failed to delete paper');
-      }
-    });
+    this.appState.removePaperById(paperId)
   }
 
   removeAllPapers() {
@@ -65,6 +38,9 @@ export class CollectionComponent implements OnInit {
     const file = input.files && input.files[0];
     if (!file) return;
 
+    this.appState
+
+    /*
     // First create paper in database
     const newPaper: PaperCreate = {
       title: file.name,
@@ -96,6 +72,7 @@ export class CollectionComponent implements OnInit {
         alert('Failed to create paper');
       }
     });
+    */
   }
 
   startDrafting() {
@@ -139,24 +116,4 @@ export class CollectionComponent implements OnInit {
   trackByIndex(index: number): number {
     return index;
   }
-
-/*  sortPapers(): void {
-    switch (this.sortOrder) {
-      case 'dateDesc':
-        this.appState.currentStep.status.papers.sort((a, b) => b.article.savedAt.getTime() - a.article.savedAt.getTime());
-        break;
-      case 'dateAsc':
-        this.savedPapers.sort((a, b) => a.savedAt.getTime() - b.savedAt.getTime());
-        break;
-      case 'alphabetical':
-        this.savedPapers.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-    }
-  }
-*/
-
-/*  onSortChange(): void {
-    this.sortPapers();
-  }
-  */
 }

@@ -6,12 +6,12 @@ import { HeroComponent } from "./components/hero/hero.component";
 import { ResultsComponent } from "./components/results/results.component";
 import { TopicsComponent } from "./components/topics/topics.component";
 import { FooterComponent } from "./components/footer/footer.component";
-import { RESTAPIService } from "./restapiservice.service";
 import { Article, RawArticle, RequestStatus } from "./types/models";
 import { initialRequestStatus } from "./types/state";
-import { AppStateService } from "./app-state.service";
+import { AppStateService } from "./services/state/app-state.service";
 import { KeyQuestionsComponent } from "./components/key-questions/key-questions.component";
 import { PapersService } from "./services/papers.service";
+import { RESTAPIService } from "./services/restapiservice.service";
 
 @Component({
   selector: "app-root",

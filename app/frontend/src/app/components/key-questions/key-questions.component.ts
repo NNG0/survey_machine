@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { AppStateService } from '../../app-state.service';
-import { RESTAPIService } from '../../restapiservice.service';
+import { AppStateService } from '../../services/state/app-state.service';
 import { RequestStatus } from '../../types/models';
+import { RESTAPIService } from '../../services/restapiservice.service';
 
 @Component({
   selector: 'app-key-questions',

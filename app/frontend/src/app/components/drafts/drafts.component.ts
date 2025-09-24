@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
-import { AppStateService } from '../../app-state.service';
+import { AppStateService } from '../../services/state/app-state.service';
 
 @Component({
   selector: 'app-drafts',

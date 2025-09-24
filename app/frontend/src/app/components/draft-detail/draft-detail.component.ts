@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
-import { RESTAPIService } from '../../restapiservice.service';
 import { RequestStages } from '../../types/models';
 import { marked } from 'marked';
+import { AppStateService } from '../../services/state/app-state.service';
+import { RESTAPIService } from '../../services/restapiservice.service';
 
 @Component({
   selector: 'app-draft-detail',
@@ -31,6 +32,7 @@ export class DraftDetailComponent {
     private router: Router,
     private draftsService: DraftsService,
     private api: RESTAPIService,
+    private appState: AppStateService
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {

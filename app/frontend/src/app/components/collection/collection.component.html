@@ -17,6 +17,7 @@
 
   <div class="collection-content" *ngIf="appState.currentStep.saved_papers.length > 0; else emptyState">
     <div class="list-toolbar">
+      <!--
       <div class="sort-controls">
         <label for="sortSelect">Sort by:</label>
         <select id="sortSelect" [(ngModel)]="sortOrder">
@@ -25,6 +26,7 @@
           <option value="alphabetical">Alphabetical</option>
         </select>
       </div>
+      -->
       <button class="remove-all-btn" (click)="removeAllPapers()" title="Delete all papers">
         <i class="fas fa-trash"></i> Delete all
       </button>

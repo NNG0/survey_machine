@@ -10,11 +10,19 @@ export const routes: Routes = [
     component: CollectionComponent
   },
   {
-    path: 'drafts',
+    path: 'drafts', // We leave the old routed active for now, the backend shouldn't change at this point in time. 
     component: DraftsComponent
   },
   {
     path: 'drafts/:id',
+    component: DraftDetailComponent
+  },
+  {
+    path: 'projects', // Because we switched from "drafts" to "projects" in the UI, we need to map the routes accordingly
+    component: DraftsComponent
+  },
+  {
+    path: 'projects/:id',
     component: DraftDetailComponent
   },
   {

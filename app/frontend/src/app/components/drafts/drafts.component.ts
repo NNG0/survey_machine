@@ -2,9 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DraftItem, DraftsService } from '../../services/drafts.service';
-import { AppStateService } from '../../services/state/app-state.service';
-import { DraftsStore } from '../../services/state/draft.store';
+import { ProjectItem, ProjectsService } from '../../services/projects.service';
 
 @Component({
   selector: 'app-drafts',
@@ -14,23 +12,22 @@ import { DraftsStore } from '../../services/state/draft.store';
   styleUrls: ['./drafts.component.css']
 })
 export class DraftsComponent {
-  drafts: DraftItem[] = [];
+  drafts: ProjectItem[] = [];
   showPreview = false;
   previewMarkdown = '';
   isEditing = false;
   editContent = '';
-  currentDraft: DraftItem | null = null;
+  currentDraft: ProjectItem | null = null;
   sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
   constructor(
-    private draftsService: DraftsService,
-    private appState: AppStateService,
-    private draftStore: DraftsStore,
+    private draftsService: ProjectsService,
   ) {
     this.load();
   }
 
   load(): void {
+    this.drafts = this.draftsService.getAll();
     this.sortDrafts();
   }
 
@@ -38,9 +35,9 @@ export class DraftsComponent {
     this.load();
   }
 
-  openPreviewMarkdown(draft: DraftItem): void {
+  openPreviewMarkdown(draft: ProjectItem): void {
     // Get fresh draft data from service to ensure we have the latest markdown
-    const freshDraft = this.draftStore.getDraftById(draft.id);
+    const freshDraft = this.draftsService.getById(draft.id);
     if (!freshDraft) return;
 
     const created = new Date(freshDraft.createdAt).toLocaleString();

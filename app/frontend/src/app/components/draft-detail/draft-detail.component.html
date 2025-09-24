@@ -20,7 +20,7 @@
       <a class="btn primary" [routerLink]="['/drafts', draft.id]" target="_blank" rel="noopener">
         <i class="fas fa-eye"></i> View
       </a>
-      <a routerLink="/drafts" class="btn">Back to drafts</a>
+      <a routerLink="/drafts" class="btn">Back to projects</a>
     </div>
 
     <div class="tags" *ngIf="draft.keywords?.length">
@@ -227,8 +227,7 @@
             </details>
           </div>
 
-          <button class="btn primary"
-            >
+          <button class="btn primary">
             Add Paper
           </button>
         </details>
@@ -262,7 +261,7 @@
               </ng-template>
             </div>
           </div>
-          <button class="btn primary" >Add
+          <button class="btn primary">Add
             Heading</button>
         </details>
 
@@ -292,8 +291,8 @@
 
 <ng-template #notFound>
   <div class="empty-state">
-    <h3>Draft not found</h3>
-    <a routerLink="/drafts" class="btn">Back to drafts</a>
+    <h3>Project Draft not found</h3>
+    <a routerLink="/drafts" class="btn">Back to projects</a>
   </div>
 </ng-template>
 

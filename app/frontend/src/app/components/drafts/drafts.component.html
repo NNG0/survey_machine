@@ -1,7 +1,7 @@
 <div class="drafts-container">
   <div class="drafts-header">
-    <h2><i class="fas fa-file-alt"></i> Drafts</h2>
-    <p class="subtitle">⑤ Manage your drafts, edit them and save them. </p>
+    <h2><i class="fas fa-file-alt"></i> Projects</h2>
+    <p class="subtitle">⑤ Manage your projects, edit them and save them. </p>
   </div>
 
   <div class="drafts-content" *ngIf="drafts.length > 0; else emptyState">
@@ -20,7 +20,8 @@
         <div class="paper-title">
           <h3>{{ d.title }}</h3>
           <p class="meta">
-            <i class="fas fa-clock"></i> Created {{ d.createdAt | date:'dd.MM.yyyy HH:mm' }} • Updated {{ d.updatedAt | date:'dd.MM.yyyy HH:mm' }}
+            <i class="fas fa-clock"></i> Created {{ d.createdAt | date:'dd.MM.yyyy HH:mm' }} • Updated {{ d.updatedAt |
+            date:'dd.MM.yyyy HH:mm' }}
           </p>
         </div>
         <div class="paper-actions">
@@ -45,8 +46,8 @@
   <ng-template #emptyState>
     <div class="empty-state">
       <i class="fas fa-file-alt fa-3x"></i>
-      <h3>No drafts yet</h3>
-      <p>Start drafting from the Collection to see drafts here.</p>
+      <h3>No projects yet</h3>
+      <p>Start drafting from the Collection to see projects here.</p>
     </div>
   </ng-template>
 </div>
@@ -54,7 +55,7 @@
 <div class="modal-backdrop" *ngIf="showPreview" (click)="closePreview()"></div>
 <div class="modal" *ngIf="showPreview">
   <div class="modal-header">
-    <h3>Draft preview</h3>
+    <h3>Project Draft preview</h3>
     <div class="header-actions">
       <button class="btn edit-btn" (click)="toggleEdit()" *ngIf="!isEditing">
         <i class="fas fa-edit"></i> Edit
@@ -77,5 +78,3 @@
     </div>
   </div>
 </div>
-
-

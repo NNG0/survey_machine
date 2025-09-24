@@ -60,6 +60,7 @@ export class AppStateService {
 
   resetState() {
     this.state.set(initialAppState);
+    this.workflowId = null;
   }
 
   replaceArticlesAndRemoveSaved() {
@@ -96,5 +97,15 @@ export class AppStateService {
 
   get history(): HistoryEntry[] {
     return this.state().history;
+  }
+
+  private workflowId: string | null = null;
+
+  get currentWorkflowId(): string | null {
+    return this.workflowId;
+  }
+
+  setWorkflowId(workflowId: string | null) {
+    this.workflowId = workflowId;
   }
 }

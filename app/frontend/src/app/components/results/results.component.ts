@@ -3,6 +3,7 @@ import { CommonModule } from "@angular/common";
 import { Router } from '@angular/router';
 import { AppStateService } from "../../services/state/app-state.service";
 import { Article } from "../../types/models";
+import { ArticleStore } from "../../services/state/article.store";
 
 interface Paper {
   id: string;
@@ -27,7 +28,7 @@ interface Paper {
 export class ResultsComponent {
   @Input() showResults = false;
 
-  constructor(private router: Router, public appState: AppStateService) {}
+  constructor(private router: Router, public appState: AppStateService, private articleStore: ArticleStore) {}
 
   exampleResult: Paper = {
     id: '1',
@@ -43,10 +44,10 @@ export class ResultsComponent {
   };
 
   isSaved(article: Article): boolean {
-    return this.appState.isArticleSaved(article)
+    return this.articleStore.isArticleSaved(article)
   }
 
   toggleSave(article: Article) {
-    this.appState.toggleSavedPaper(article)
+    this.articleStore.toggleSavedPaper(article)
   }
 }

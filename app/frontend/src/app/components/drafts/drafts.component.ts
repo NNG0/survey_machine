@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DraftItem, DraftsService } from '../../services/drafts.service';
 import { AppStateService } from '../../services/state/app-state.service';
+import { DraftsStore } from '../../services/state/draft.store';
 
 @Component({
   selector: 'app-drafts',
@@ -21,7 +22,11 @@ export class DraftsComponent {
   currentDraft: DraftItem | null = null;
   sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
-  constructor(private draftsService: DraftsService, private appState: AppStateService) {
+  constructor(
+    private draftsService: DraftsService,
+    private appState: AppStateService,
+    private draftStore: DraftsStore,
+  ) {
     this.load();
   }
 
@@ -35,7 +40,7 @@ export class DraftsComponent {
 
   openPreviewMarkdown(draft: DraftItem): void {
     // Get fresh draft data from service to ensure we have the latest markdown
-    const freshDraft = this.appState.getDraftById(draft.id);
+    const freshDraft = this.draftStore.getDraftById(draft.id);
     if (!freshDraft) return;
 
     const created = new Date(freshDraft.createdAt).toLocaleString();

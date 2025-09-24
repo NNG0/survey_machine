@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { DraftsService } from '../../services/drafts.service';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/state/app-state.service';
+import { ArticleStore } from '../../services/state/article.store';
 
 @Component({
   selector: 'app-collection',
@@ -17,14 +18,14 @@ export class CollectionComponent implements OnInit {
   showDraftModal = false;
   researchQuestions: string[] = [''];
 
-  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router, public appState: AppStateService) { }
+  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router, public appState: AppStateService, private articleStore: ArticleStore) { }
 
   ngOnInit() {
-    this.appState.replaceArticlesWithSaved();
+    this.articleStore.replaceArticlesWithSaved();
   }
 
   removePaper(paperId: string) {
-    this.appState.removePaperById(paperId)
+    this.articleStore.removePaperById(paperId)
   }
 
   removeAllPapers() {

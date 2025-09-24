@@ -12,6 +12,7 @@ import { AppStateService } from "./services/state/app-state.service";
 import { KeyQuestionsComponent } from "./components/key-questions/key-questions.component";
 import { PapersService } from "./services/papers.service";
 import { RESTAPIService } from "./services/restapiservice.service";
+import { ArticleStore } from "./services/state/article.store";
 
 @Component({
   selector: "app-root",
@@ -35,12 +36,13 @@ export class AppComponent implements OnInit {
     private appState: AppStateService,
     public router: Router,
     private papersService: PapersService,
+    private articleStore: ArticleStore,
   ) { }
   ngOnInit(): void {
     this.papersService.getAllPapers().subscribe({
       next: (papers:Article[]) => {
         papers.map(p => {
-          this.appState.addPaper(p)
+          this.articleStore.addPaper(p)
         });
       },
       error: (error) => {

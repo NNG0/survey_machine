@@ -38,7 +38,8 @@ services:
     container_name: ollama-instance
     hostname: ollama-instance
     volumes:
-      - .ollama:/root/.ollama # The .ollama directory is a symlink to the main ollama directory
+      # - .ollama:/root/.ollama # The .ollama directory is a symlink to the main ollama directory
+      - ~/.ollama/models:/root/.ollama/models # For local models
     networks:
       survey-machine:
         # 10.89.0.3

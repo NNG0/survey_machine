@@ -17,7 +17,7 @@ export interface PaperCreate {
   providedIn: 'root'
 })
 export class PapersService {
-  private apiUrl = 'http://localhost:8000';
+  private apiUrl = 'http://localhost:8001';
 
   constructor(private http: HttpClient) {}
 

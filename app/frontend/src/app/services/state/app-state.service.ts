@@ -16,8 +16,8 @@ import { DraftsStore } from "./draft.store";
 })
 export class AppStateService {
   constructor(
-    private articleStore: ArticleStore,
-    private draftStore: DraftsStore
+    // private articleStore: ArticleStore,
+    // private draftStore: DraftsStore
   ) { }
   state = signal<AppState>(initialAppState);
 

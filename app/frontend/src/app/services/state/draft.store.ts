@@ -4,7 +4,7 @@ import { DraftItem, StepState } from "../../types/models";
 
 @Injectable({ providedIn: 'root' })
 export class DraftsStore {
-  constructor(private app: AppStateService) {}
+  constructor(private appState: AppStateService) {}
 
   createDraft() {
     const dummyDraft: DraftItem = {
@@ -34,15 +34,17 @@ export class DraftsStore {
   }
 
   getDraftById(id: string) {
-    return this.app.state().current_step.status.draft.find(d => d.id === id);
+    return this.appState.state().current_step.status.draft.find(
+      (d: DraftItem) => d.id === id
+    );
   }
 
   getArrayOfDrafts() {
-    return this.app.state().current_step.status.draft;
+    return this.appState.state().current_step.status.draft;
   }
 
   private updateStep(updater: (step: StepState) => StepState) {
-    this.app.state.update(prev => ({
+    this.appState.state.update((prev: any) => ({
       ...prev,
       current_step: updater(prev.current_step),
     }));

@@ -17,6 +17,11 @@
   padding: 40px;
   gap: 40px;
   flex: 1;
+  flex-direction: row;
+}
+
+.content-item {
+  flex: 1;
 }
 
 .content-pages {

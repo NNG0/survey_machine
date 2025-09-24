@@ -9,13 +9,20 @@ import { RequestStages, RequestStatus, StepInformation } from "../types/models";
 export class RESTAPIService {
   private baseUrl = "http://localhost:8001";
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   runSingleNextStep(
     requestStatus: RequestStatus,
   ): Observable<[RequestStatus, StepInformation]> {
     return this.http.post<[RequestStatus, StepInformation]>(
       `${this.baseUrl}/run_single_next_step`,
+      requestStatus,
+    );
+  }
+
+  runSingleRelevantLiteratureAgent(requestStatus: RequestStatus): Observable<[RequestStatus, StepInformation]> {
+    return this.http.post<[RequestStatus, StepInformation]>(
+      `${this.baseUrl}/run_all_relevant_literature`,
       requestStatus,
     );
   }

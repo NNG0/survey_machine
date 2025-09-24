@@ -9,7 +9,6 @@ import { FooterComponent } from "./components/footer/footer.component";
 import { Article, RawArticle, RequestStatus } from "./types/models";
 import { initialRequestStatus } from "./types/state";
 import { AppStateService } from "./services/state/app-state.service";
-import { KeyQuestionsComponent } from "./components/key-questions/key-questions.component";
 import { PapersService } from "./services/papers.service";
 import { RESTAPIService } from "./services/restapiservice.service";
 import { ArticleStore } from "./services/state/article.store";
@@ -25,7 +24,6 @@ import { ArticleStore } from "./services/state/article.store";
     ResultsComponent,
     TopicsComponent,
     FooterComponent,
-    KeyQuestionsComponent
   ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.css"],
@@ -70,7 +68,7 @@ export class AppComponent implements OnInit {
     console.log("RequestStatus:", requestStatus);
     console.log("Search filters:", searchData.filters);
 
-    this.restApiService.runAllCreateKeyQuestions(requestStatus).subscribe({
+    this.restApiService.runSingleRelevantLiteratureAgent(requestStatus).subscribe({
       next: ([updatedStatus, info]) => {
         console.log("Updated status: ", updatedStatus);
         console.log("Info: ", info);

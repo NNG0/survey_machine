@@ -38,14 +38,14 @@ export class DraftDetailComponent {
     if (id) {
       this.draft = this.draftsService.getByIdOrCreate(id, 'Untitled Draft');
     } else {
-      this.draft = this.draftsService.create('Untitled Draft');
+      this.draft = this.draftsService.create('Untitled Draft', "", null);
     }
     this.titleEdit = this.draft.title;
     this.updateDraftMarkdown();
   }
 
   save(): void {
-    const updated = this.draftsService.update(this.draft.id, );
+    const updated = this.draftsService.update(this.draft.id);
     if (updated) {
       this.draft = updated;
     }

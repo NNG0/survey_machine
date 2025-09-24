@@ -43,7 +43,7 @@
         <div class="paper-actions">
           <span class="relevance" title="Relevanz zur Forschungsfrage">
           </span>
-          <button class="remove-btn"  title="Aus Sammlung entfernen">
+          <button class="remove-btn" title="Aus Sammlung entfernen">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -78,10 +78,11 @@
     <button class="close-btn" (click)="closeDraftModal()">×</button>
   </div>
   <div class="modal-body">
-    <p>④  Please enter your research question(s) and start drafting:</p>
+    <p>④ Please enter your research question and optionally key questions and start drafting:</p>
     <div class="rq-list">
       <div class="rq-item" *ngFor="let rq of researchQuestions; let i = index; trackBy: trackByIndex">
-        <label>Research question {{ i + 1 }}</label>
+        <label *ngIf="i === 0">Research question</label>
+        <label *ngIf="i > 0">Key question {{ i }}</label>
         <div class="rq-row">
           <input type="text" [(ngModel)]="researchQuestions[i]" placeholder="Type here" />
           <button class="rq-remove" *ngIf="i > 0" (click)="removeResearchQuestion(i)" title="Remove">

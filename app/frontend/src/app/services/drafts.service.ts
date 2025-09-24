@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { RequestStatus } from '../types/models';
+import { Injectable, Optional } from '@angular/core';
+import { RequestStatus, StatusSetting, SurveyResult } from '../types/models';
 import { initialRequestStatus } from '../types/state';
 
 export interface DraftItem {
@@ -41,18 +41,38 @@ export class DraftsService {
   }
 
   getByIdOrCreate(id: string, default_title: string): DraftItem {
-    return this.getById(id) || this.create(default_title);
+    return this.getById(id) || this.create(default_title, "", null);
   }
 
-  create(title: string): DraftItem {
+  create(title: string, research_question: string, key_questions: string[] | null): DraftItem {
     const now = new Date().toISOString();
+    const statusSettings: StatusSetting = {
+      research_question,
+      paper_limit: 5,
+      num_key_questions: 5,
+    };
+    
+    
+    // If the key questions are provided as a list of strings, map them to a list of [string, null, null]
+    let processed_key_questions: [string, string[] | null, SurveyResult | null][] | null = null;
+    if (key_questions && key_questions.length > 0 && typeof key_questions[0] === 'string') {
+      processed_key_questions = key_questions.map(q => [q, null, null]);
+    } 
+
+    const requestStatus: RequestStatus = {
+      settings: statusSettings,
+      key_questions: processed_key_questions,
+      papers: [],
+      draft: [],
+      
+    }
     const item: DraftItem = {
       id: crypto.randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
       keywords: [],
-      requestStatus: {...initialRequestStatus},
+      requestStatus: { ...initialRequestStatus, ...requestStatus },
     };
     const items = this.readAll();
     items.unshift(item);

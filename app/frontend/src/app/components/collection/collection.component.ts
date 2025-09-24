@@ -107,7 +107,7 @@ export class CollectionComponent implements OnInit {
     }
     const first = trimmed[0];
     const title = `Draft: ${first}`;
-    const draft = this.draftsService.create(title);
+    const draft = this.draftsService.create(title, first, trimmed.length > 1 ? trimmed.slice(1) : null);
     if (trimmed.length > 0) {
     }
     this.showDraftModal = false;

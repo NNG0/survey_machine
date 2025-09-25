@@ -18,8 +18,7 @@
   background-color: #eef0ff;
   color: #3f51b5;
   padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 0.85em;
+  border-radius: 999px; font-size: 0.85em;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -94,3 +93,20 @@
 .save-link.saved:hover {
   background-color: #b71c1c;
 }
+
+.remove-all-btn {
+  background: #ffe6e6;
+  color: #d32f2f;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-end;
+}
+
+.remove-all-btn:hover {
+  background: #ffcccc;
+}
+
+

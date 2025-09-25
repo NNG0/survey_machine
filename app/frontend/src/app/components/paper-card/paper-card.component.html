@@ -14,13 +14,6 @@
     {{ ((paper.relevance_score ?? 0) * 100) | number:'1.0-0' }}% relevant
   </div>
   <div class="actions">
-    <a
-      class="save-link"
-      [href]="goToArticle()"
-      target="_blank">
-      Go to paper
-    </a>
-
     <ng-container [ngSwitch]="mode">
       <!-- results mode -->
       <button *ngSwitchCase="'results'"
@@ -39,6 +32,13 @@
         <i class="fas fa-trash"></i>
       </button>
     </ng-container>
+
+    <a
+      class="save-link"
+      [href]="goToArticle()"
+      target="_blank">
+      Go to paper
+    </a>
   </div>
 </div>
 

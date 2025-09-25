@@ -1,7 +1,7 @@
 <div class="drafts-container">
   <div class="drafts-header">
-    <h2><i class="fas fa-file-alt"></i> Drafts</h2>
-    <p class="subtitle">⑤ Manage your drafts, edit them and save them. </p>
+    <h2><i class="fas fa-file-alt"></i> Projects</h2>
+    <p class="subtitle">⑤ Manage your projects, edit them and save them. </p>
   </div>
 
   <div class="drafts-content" *ngIf="drafts.length > 0; else emptyState">
@@ -20,7 +20,8 @@
         <div class="paper-title">
           <h3>{{ d.title }}</h3>
           <p class="meta">
-            <i class="fas fa-clock"></i> Created {{ d.createdAt | date:'dd.MM.yyyy HH:mm' }} • Updated {{ d.updatedAt | date:'dd.MM.yyyy HH:mm' }}
+            <i class="fas fa-clock"></i> Created {{ d.createdAt | date:'dd.MM.yyyy HH:mm' }} • Updated {{ d.updatedAt |
+            date:'dd.MM.yyyy HH:mm' }}
           </p>
         </div>
         <div class="paper-actions">
@@ -35,8 +36,14 @@
       </div>
 
       <div class="saved-info">
-        <button class="btn view-edit" (click)="openPreviewMarkdown(d)">
+        <button class="btn view-edit" (click)="openPreviewMarkdown(d)" *ngIf="d.markdown">
           <i class="fas fa-eye"></i> View
+        </button>
+        <button class="btn view-edit" *ngIf="!d.markdown" disabled title="No preview available">
+          <i class="fas fa-eye-slash"></i> View
+        </button>
+        <button class="btn edit-btn" [routerLink]="['/drafts', d.id]" target="_blank">
+          <i class="fas fa-edit"></i> Edit
         </button>
       </div>
     </div>
@@ -45,8 +52,8 @@
   <ng-template #emptyState>
     <div class="empty-state">
       <i class="fas fa-file-alt fa-3x"></i>
-      <h3>No drafts yet</h3>
-      <p>Start drafting from the Collection to see drafts here.</p>
+      <h3>No projects yet</h3>
+      <p>Start drafting from the Collection to see projects here.</p>
     </div>
   </ng-template>
 </div>
@@ -54,28 +61,12 @@
 <div class="modal-backdrop" *ngIf="showPreview" (click)="closePreview()"></div>
 <div class="modal" *ngIf="showPreview">
   <div class="modal-header">
-    <h3>Draft preview</h3>
+    <h3>Project Draft preview</h3>
     <div class="header-actions">
-      <button class="btn edit-btn" (click)="toggleEdit()" *ngIf="!isEditing">
-        <i class="fas fa-edit"></i> Edit
-      </button>
       <button class="close-btn" (click)="closePreview()">×</button>
     </div>
   </div>
   <div class="modal-body">
-    <pre class="markdown" *ngIf="!isEditing">{{ previewMarkdown }}</pre>
-    <div class="edit-mode" *ngIf="isEditing">
-      <textarea [(ngModel)]="editContent" class="markdown-editor" placeholder="Edit your draft content..."></textarea>
-      <div class="edit-actions">
-        <button class="btn save-btn" (click)="saveEdit()">
-          <i class="fas fa-save"></i> Save
-        </button>
-        <button class="btn cancel-btn" (click)="cancelEdit()">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </div>
+    <div class="markdown" *ngIf="previewMarkdown" [innerHTML]="previewMarkdown"></div>
   </div>
 </div>
-
-

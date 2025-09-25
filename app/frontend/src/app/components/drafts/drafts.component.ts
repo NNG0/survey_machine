@@ -2,9 +2,9 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DraftItem, DraftsService } from '../../services/drafts.service';
-import { AppStateService } from '../../services/state/app-state.service';
-import { DraftsStore } from '../../services/state/draft.store';
+import { ProjectItem, ProjectsService } from '../../services/projects.service';
+import { RequestStatus } from '../../types/models';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-drafts',
@@ -14,78 +14,52 @@ import { DraftsStore } from '../../services/state/draft.store';
   styleUrls: ['./drafts.component.css']
 })
 export class DraftsComponent {
-  drafts: DraftItem[] = [];
+  drafts: ProjectItem[] = [];
   showPreview = false;
-  previewMarkdown = '';
-  isEditing = false;
-  editContent = '';
-  currentDraft: DraftItem | null = null;
+  previewMarkdown: String | null = null;
+  currentDraft: ProjectItem | null = null;
   sortOrder: 'dateDesc' | 'dateAsc' | 'alphabetical' = 'dateDesc';
 
   constructor(
-    private draftsService: DraftsService,
-    private appState: AppStateService,
-    private draftStore: DraftsStore,
+    private projectsService: ProjectsService,
   ) {
     this.load();
   }
 
   load(): void {
+    this.drafts = this.projectsService.getAll();
     this.sortDrafts();
   }
 
   deleteDraft(id: string): void {
+    this.projectsService.delete(id);
     this.load();
   }
 
-  openPreviewMarkdown(draft: DraftItem): void {
+  openPreviewMarkdown(draft: ProjectItem): void {
     // Get fresh draft data from service to ensure we have the latest markdown
-    const freshDraft = this.draftStore.getDraftById(draft.id);
-    if (!freshDraft) return;
+    const freshProject = this.projectsService.getById(draft.id);
+    if (!freshProject) return;
 
-    const created = new Date(freshDraft.createdAt).toLocaleString();
-    const updated = new Date(freshDraft.updatedAt).toLocaleString();
-    const kw = freshDraft.keywords && freshDraft.keywords.length ? `\n\n**Keywords:** ${freshDraft.keywords.join(', ')}` : '';
+    // const created = new Date(freshProject.createdAt).toLocaleString();
+    // const updated = new Date(freshProject.updatedAt).toLocaleString();
+    // const kw = freshProject.keywords && freshProject.keywords.length ? `\n\n**Keywords:** ${freshProject.keywords.join(', ')}` : '';
 
     // Use saved markdown if available, otherwise generate default
-    if (freshDraft.markdown) {
-      this.previewMarkdown = freshDraft.markdown;
-    } else {
-      this.previewMarkdown = `# ${freshDraft.title}\n\nCreated: ${created}\n\nUpdated: ${updated}${kw}`;
-    }
+    // if (freshProject.markdown) {
+    //   this.previewMarkdown = freshProject.markdown;
+    // } else {
+      // this.previewMarkdown = `# ${freshProject.title}\n\nCreated: ${created}\n\nUpdated: ${updated}${kw}`;
+      this.updateDraftMarkdown(freshProject.requestStatus);
+    // }
 
-    this.editContent = this.previewMarkdown;
-    this.isEditing = false;
     this.showPreview = true;
   }
 
   closePreview(): void {
     this.showPreview = false;
-    this.previewMarkdown = '';
-    this.isEditing = false;
-    this.editContent = '';
+    this.previewMarkdown = null;
     this.currentDraft = null;
-  }
-
-  toggleEdit(): void {
-    this.isEditing = !this.isEditing;
-    if (this.isEditing) {
-      this.editContent = this.previewMarkdown;
-    }
-  }
-
-  saveEdit(): void {
-    if (!this.currentDraft) return;
-    this.previewMarkdown = this.editContent;
-    this.isEditing = false;
-    // Save the markdown content to localStorage
-    // Reload drafts to get updated data
-    this.load();
-  }
-
-  cancelEdit(): void {
-    this.editContent = this.previewMarkdown;
-    this.isEditing = false;
   }
 
   sortDrafts(): void {
@@ -104,6 +78,22 @@ export class DraftsComponent {
 
   onSortChange(): void {
     this.sortDrafts();
+  }
+
+  private updateDraftMarkdown(rs: RequestStatus): void {
+    try {
+      if (!rs || !Array.isArray(rs.draft)) {
+        this.previewMarkdown = null;
+        return;
+      }
+      const md = rs.draft
+        .map(h => `${h.title}\n\n${h.content ?? ''}`) // The title already has a leading #
+        .join('\n\n');
+      const html = marked.parse(md);
+      this.previewMarkdown = String(html);
+    } catch {
+      this.previewMarkdown = null;
+    }
   }
 }
 

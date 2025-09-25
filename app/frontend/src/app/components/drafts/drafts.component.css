@@ -85,6 +85,10 @@
 
 .view-edit { background: #6c47ff; color: white; }
 .view-edit:hover { background: #5a3bd6; }
+/* For disabled state */
+.view-edit:disabled, .view-edit[disabled] { background: #6c3ab1; cursor: not-allowed; }
+.view-edit:disabled:hover, .view-edit[disabled]:hover { background: #6c3ab1; }
+
 
 .remove-btn { background: #ffe6e6; color: #d32f2f; border: none; padding: 8px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
 .remove-btn:hover { background: #ffcccc; }
@@ -107,7 +111,7 @@
 .edit-mode { display: flex; flex-direction: column; gap: 12px; }
 .markdown-editor { width: 100%; min-height: 300px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; resize: vertical; }
 .edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.edit-btn { background: #6c47ff; color: white; }
+.edit-btn { background: #6c47ff; color: white; margin: 0 8px; }
 .edit-btn:hover { background: #5a3bd6; }
 .save-btn { background: #10b981; color: white; }
 .save-btn:hover { background: #059669; }

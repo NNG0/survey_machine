@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PapersService, PaperCreate } from '../../services/papers.service';
 import { Router } from '@angular/router';
-import { DraftsService } from '../../services/drafts.service';
+import { ProjectsService } from '../../services/projects.service';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/state/app-state.service';
 import { ArticleStore } from '../../services/state/article.store';
@@ -19,7 +19,7 @@ export class CollectionComponent implements OnInit {
   showDraftModal = false;
   researchQuestions: string[] = [''];
 
-  constructor(private papersService: PapersService, private draftsService: DraftsService, private router: Router, public appState: AppStateService, private articleStore: ArticleStore) { }
+  constructor(private papersService: PapersService, private draftsService: ProjectsService, private router: Router, public appState: AppStateService, private articleStore: ArticleStore) { }
 
   ngOnInit() {
     this.articleStore.replaceArticlesWithSaved();
@@ -112,7 +112,7 @@ export class CollectionComponent implements OnInit {
     if (trimmed.length > 0) {
     }
     this.showDraftModal = false;
-    this.router.navigate(['/drafts', draft.id]);
+    this.router.navigate(['/projects', draft.id]);
   }
 
   trackByIndex(index: number): number {

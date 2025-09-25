@@ -2,7 +2,7 @@ import { Injectable, Optional } from '@angular/core';
 import { RequestStatus, StatusSetting, SurveyResult } from '../types/models';
 import { initialRequestStatus } from '../types/state';
 
-export interface DraftItem {
+export interface ProjectItem {
   id: string;
   title: string;
   createdAt: string; // ISO string
@@ -15,36 +15,36 @@ export interface DraftItem {
 type NewType = 'keywords';
 
 @Injectable({ providedIn: 'root' })
-export class DraftsService {
-  private storageKey = 'drafts';
+export class ProjectsService {
+  private storageKey = 'drafts'; // This stays the same for backward compatibility
 
-  private readAll(): DraftItem[] {
+  private readAll(): ProjectItem[] {
     const raw = localStorage.getItem(this.storageKey);
     if (!raw) return [];
     try {
-      return JSON.parse(raw) as DraftItem[];
+      return JSON.parse(raw) as ProjectItem[];
     } catch {
       return [];
     }
   }
 
-  private writeAll(items: DraftItem[]): void {
+  private writeAll(items: ProjectItem[]): void {
     localStorage.setItem(this.storageKey, JSON.stringify(items));
   }
 
-  getAll(): DraftItem[] {
+  getAll(): ProjectItem[] {
     return this.readAll().sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
   }
 
-  getById(id: string): DraftItem | undefined {
+  getById(id: string): ProjectItem | undefined {
     return this.readAll().find(d => d.id === id);
   }
 
-  getByIdOrCreate(id: string, default_title: string): DraftItem {
+  getByIdOrCreate(id: string, default_title: string): ProjectItem {
     return this.getById(id) || this.create(default_title, "", null);
   }
 
-  create(title: string, research_question: string, key_questions: string[] | null): DraftItem {
+  create(title: string, research_question: string, key_questions: string[] | null): ProjectItem {
     const now = new Date().toISOString();
     const statusSettings: StatusSetting = {
       research_question,
@@ -66,7 +66,7 @@ export class DraftsService {
       draft: [],
       
     }
-    const item: DraftItem = {
+    const item: ProjectItem = {
       id: crypto.randomUUID(),
       title,
       createdAt: now,
@@ -83,7 +83,7 @@ export class DraftsService {
   update(
     id: string,
     //updates: Partial<Pick<DraftItem, 'title' | NewType | 'status' | 'markdown' | 'requestStatus'>>
-  ): DraftItem | undefined {
+  ): ProjectItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;

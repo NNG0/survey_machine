@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DraftItem, DraftsService } from '../../services/drafts.service';
+import { ProjectItem, ProjectsService } from '../../services/projects.service';
 import { RequestStages } from '../../types/models';
 import { marked } from 'marked';
 import { AppStateService } from '../../services/state/app-state.service';
@@ -16,7 +16,7 @@ import { RESTAPIService } from '../../services/restapiservice.service';
   styleUrls: ['./draft-detail.component.css']
 })
 export class DraftDetailComponent {
-  draft: DraftItem;
+  draft: ProjectItem;
   titleEdit: string = '';
   private saveTimer: any;
   private readonly saveDelayMs = 500;
@@ -30,7 +30,7 @@ export class DraftDetailComponent {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private draftsService: DraftsService,
+    private draftsService: ProjectsService,
     private api: RESTAPIService,
     private appState: AppStateService
   ) {
@@ -115,7 +115,7 @@ export class DraftDetailComponent {
 
   delete(): void {
     this.draftsService.delete(this.draft.id);
-    this.router.navigate(['/drafts']);
+    this.router.navigate(['/projects']);
   }
 
   private updateDraftMarkdown(): void {

@@ -1,7 +1,7 @@
 <div class="collection-container">
   <div class="collection-header">
     <h2><i class="fas fa-bookmark"></i> My Collection</h2>
-    <p class="subtitle">③ Manage your saved papers, upload PDFs, and start drafting.</p>
+    <p class="subtitle">③ Manage your saved papers, upload PDFs, and start drafting a new project.</p>
   </div>
 
   <div class="collection-actions">
@@ -52,7 +52,7 @@
     <button class="close-btn" (click)="closeDraftModal()">×</button>
   </div>
   <div class="modal-body">
-    <p>④ Please enter your research question and optionally key questions and start drafting:</p>
+    <p>④ Please enter your research question and optionally key questions and start drafting a new project:</p>
     <div class="rq-list">
       <div class="rq-item" *ngFor="let rq of researchQuestions; let i = index; trackBy: trackByIndex">
         <label *ngIf="i === 0">Research question</label>
@@ -73,7 +73,7 @@
   </div>
   <div class="modal-footer">
     <button class="btn draft-btn" (click)="submitDraft()">
-      <i class="fas fa-pen"></i> Draft
+      <i class="fas fa-pen"></i> Start Project
     </button>
   </div>
 

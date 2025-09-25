@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime
 
 import httpx
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
@@ -572,10 +573,13 @@ async def upload_for_workflow(
 
         article = Article(
             article=RawArticle(
+                id=file_id,
                 title=parsed_title,
                 author=parsed_authors,
+                savedAt=datetime.utcnow().isoformat(),
                 abstract=parsed_abstract,
                 url=file_path,
+                doi=parsed_data.get("doi"),
             ),
             problem_questions=None,
             methods=None,

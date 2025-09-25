@@ -45,6 +45,33 @@
   </ng-template>
 </div>
 
+<!-- Research Question Modal -->
+<div class="modal-backdrop" *ngIf="showRQModal" (click)="closeRQModal()"></div>
+<div class="modal" *ngIf="showRQModal">
+  <div class="modal-header">
+    <h3>Research Question Required</h3>
+    <button class="close-btn" (click)="closeRQModal()">×</button>
+  </div>
+  <div class="modal-body">
+    <p>To calculate relevance scores for your PDF, please enter your research question:</p>
+    <div class="rq-list">
+      <div class="rq-item">
+        <label>Research question</label>
+        <div class="rq-row">
+          <input type="text" [(ngModel)]="researchQuestions[0]"
+                 placeholder="Enter your research question here..."
+                 (keyup.enter)="submitRQAndUpload()" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn draft-btn" (click)="submitRQAndUpload()">
+      <i class="fas fa-upload"></i> Upload PDF
+    </button>
+  </div>
+</div>
+
 <div class="modal-backdrop" *ngIf="showDraftModal" (click)="closeDraftModal()"></div>
 <div class="modal" *ngIf="showDraftModal">
   <div class="modal-header">

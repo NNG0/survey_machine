@@ -89,37 +89,39 @@
                 </div>
               </div>
 
-              <input type="text" [(ngModel)]="rs.key_questions![i][0]" (ngModelChange)="onRequestStatusChange()"
-                placeholder="Enter key question" />
+              <div class="form-section" style="grid-column: 1 / -1;">
+                <input type="text" [(ngModel)]="rs.key_questions![i][0]" (ngModelChange)="onRequestStatusChange()"
+                  placeholder="Enter key question" style="width: 100%;" />
+              </div>
 
               <!-- Related Papers -->
-              <div class="form-section" *ngIf="rs.key_questions![i][1] as papers; else addPapersBtn">
+              <div class="form-section vertical" style="grid-column: 1 / -1;">
                 <label>Related Papers</label>
-                <div class="row" *ngFor="let p of papers; let j = index">
-                  <input type="text" [(ngModel)]="rs.key_questions![i][1]![j]" placeholder="Paper name"
-                    (ngModelChange)="onRequestStatusChange()" />
-                  <button class="remove-btn" (click)="rs.key_questions![i][1]!.splice(j, 1); onRequestStatusChange()"
-                    title="Remove paper">❌</button>
+                <div *ngIf="rs.key_questions![i][1] as papers; else addPapersBtn">
+                  <div class="paper-input-container" *ngFor="let p of papers; let j = index">
+                    <input type="text" [(ngModel)]="rs.key_questions![i][1]![j]" placeholder="Paper name"
+                      (ngModelChange)="onRequestStatusChange()" class="paper-input" />
+                    <button class="remove-btn" (click)="rs.key_questions![i][1]!.splice(j, 1); onRequestStatusChange()"
+                      title="Remove paper">❌</button>
+                  </div>
+                  <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()" style="margin-top: 8px;">Add Related Paper</button>
                 </div>
-                <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()">Add Related
-                  Paper</button>
+                <ng-template #addPapersBtn>
+                  <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related Paper</button>
+                </ng-template>
               </div>
-              <ng-template #addPapersBtn>
-                <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related
-                  Paper</button>
-              </ng-template>
 
               <!-- Survey Result -->
-              <div class="form-section" *ngIf="rs.key_questions![i][2] as sr; else addSurveyResultBtn">
+              <div class="form-section vertical" style="grid-column: 1 / -1;">
                 <label>Survey Result</label>
-                <textarea rows="4" [(ngModel)]="rs.key_questions![i][2]!.result"
-                  placeholder="Enter summarized survey result" (ngModelChange)="onRequestStatusChange()"></textarea>
+                <ng-container *ngIf="rs.key_questions![i][2] as sr; else addSurveyResultBtn">
+                  <textarea class="scrollable-field resizable" [(ngModel)]="rs.key_questions![i][2]!.result"
+                    placeholder="Enter summarized survey result" (ngModelChange)="onRequestStatusChange()"></textarea>
+                </ng-container>
+                <ng-template #addSurveyResultBtn>
+                  <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add Survey Result</button>
+                </ng-template>
               </div>
-              <ng-template #addSurveyResultBtn>
-                <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add
-                  Survey
-                  Result</button>
-              </ng-template>
             </div>
           </div>
           <ng-template #noKq>
@@ -145,37 +147,45 @@
               </div>
             </div>
 
-            <label>Title</label>
-            <ng-container *ngIf="p.article.title !== null; else addTitle">
-              <input type="text" [(ngModel)]="p.article.title" (ngModelChange)="onRequestStatusChange()"
-                placeholder="Paper title" />
-            </ng-container>
-            <ng-template #addTitle>
-              <p>No title</p>
-              <button class="btn" (click)="p.article.title = ''; onRequestStatusChange()">Add Title</button>
-            </ng-template>
+            <!-- Title -->
+            <div class="form-section vertical" style="grid-column: 1 / -1;">
+              <label>Title</label>
+              <ng-container *ngIf="p.article.title !== null; else addTitle">
+                <input type="text" [(ngModel)]="p.article.title" (ngModelChange)="onRequestStatusChange()"
+                  placeholder="Paper title" />
+              </ng-container>
+              <ng-template #addTitle>
+                <p>No title</p>
+                <button class="btn" (click)="p.article.title = ''; onRequestStatusChange()">Add Title</button>
+              </ng-template>
+            </div>
 
-            <label>Author</label>
-            <ng-container *ngIf="p.article.author !== null; else addAuthor">
-              <input type="text" [(ngModel)]="p.article.author" (ngModelChange)="onRequestStatusChange()"
-                placeholder="Author(s)" />
-            </ng-container>
-            <ng-template #addAuthor>
-              <p>No author</p>
-              <button class="btn" (click)="p.article.author = ''; onRequestStatusChange()">Add Author</button>
-            </ng-template>
+            <!-- Author -->
+            <div class="form-section vertical" style="grid-column: 1 / -1;">
+              <label>Author</label>
+              <ng-container *ngIf="p.article.author !== null; else addAuthor">
+                <input type="text" [(ngModel)]="p.article.author" (ngModelChange)="onRequestStatusChange()"
+                  placeholder="Author(s)" />
+              </ng-container>
+              <ng-template #addAuthor>
+                <p>No author</p>
+                <button class="btn" (click)="p.article.author = ''; onRequestStatusChange()">Add Author</button>
+              </ng-template>
+            </div>
 
-            <label>URL</label>
-            <ng-container *ngIf="p.article.url !== null; else addUrl">
-              <input type="text" [(ngModel)]="p.article.url" (ngModelChange)="onRequestStatusChange()"
-                placeholder="https://..." />
-              <a class="btn" *ngIf="p.article.url" [href]="p.article.url" target="_blank" rel="noopener">Open
-                URL</a>
-            </ng-container>
-            <ng-template #addUrl>
-              <p>No URL</p>
-              <button class="btn" (click)="p.article.url = ''; onRequestStatusChange()">Add URL</button>
-            </ng-template>
+            <!-- URL -->
+            <div class="form-section vertical" style="grid-column: 1 / -1;">
+              <label>URL</label>
+              <ng-container *ngIf="p.article.url !== null; else addUrl">
+                <input type="text" [(ngModel)]="p.article.url" (ngModelChange)="onRequestStatusChange()"
+                  placeholder="https://..." />
+                <a class="btn" *ngIf="p.article.url" [href]="p.article.url" target="_blank" rel="noopener" style="align-self: flex-start; margin-top: 8px;">Open URL</a>
+              </ng-container>
+              <ng-template #addUrl>
+                <p>No URL</p>
+                <button class="btn" (click)="p.article.url = ''; onRequestStatusChange()">Add URL</button>
+              </ng-template>
+            </div>
 
             <!-- Move Abstract below Title, Author, URL and make it full width -->
             <div class="form-section" style="grid-column: 1 / -1;">
@@ -195,8 +205,10 @@
               <summary>Problem Questions</summary>
               <div *ngIf="p.problem_questions as qs">
                 <div class="row" *ngFor="let q of qs; let j = index">
-                  <input type="text" [(ngModel)]="p.problem_questions![j]" (ngModelChange)="onRequestStatusChange()"
-                    placeholder="Problem question" />
+                  <textarea class="scrollable-field"
+                    [(ngModel)]="p.problem_questions![j]"
+                    (ngModelChange)="onRequestStatusChange()"
+                    placeholder="Problem question"></textarea>
                   <button class="remove-btn" (click)="p.problem_questions!.splice(j, 1); onRequestStatusChange()"
                     title="Remove question">❌</button>
                 </div>
@@ -214,8 +226,10 @@
               <summary>Methods</summary>
               <div *ngIf="p.methods as ms">
                 <div class="row" *ngFor="let m of ms; let j = index">
-                  <input type="text" [(ngModel)]="p.methods![j]" (ngModelChange)="onRequestStatusChange()"
-                    placeholder="Method" />
+                  <textarea class="scrollable-field"
+                    [(ngModel)]="p.methods![j]"
+                    (ngModelChange)="onRequestStatusChange()"
+                    placeholder="Method"></textarea>
                   <button class="remove-btn" (click)="p.methods!.splice(j, 1); onRequestStatusChange()"
                     title="Remove method">❌</button>
                 </div>
@@ -252,8 +266,11 @@
             <div class="form-section" style="grid-column: 1 / -1;">
               <label>Content</label>
               <ng-container *ngIf="rs.draft[i].content !== null; else addContent">
-                <textarea rows="6" [(ngModel)]="rs.draft[i].content" (ngModelChange)="onRequestStatusChange()"
-                  placeholder="Write section content here..." style="width: 100%;"></textarea>
+                <textarea rows="6"
+                  class="scrollable-field"
+                  [(ngModel)]="rs.draft[i].content"
+                  (ngModelChange)="onRequestStatusChange()"
+                  placeholder="Write section content here..."></textarea>
               </ng-container>
               <ng-template #addContent>
                 <p>No content</p>

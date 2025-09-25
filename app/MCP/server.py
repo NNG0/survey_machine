@@ -1,7 +1,13 @@
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import uuid
+
 import httpx
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
+from database.paper_manager import PaperManager
+from pdf_parsers.factory import get_pdf_parser
 
 from .steps import (
     RequestStatus,
@@ -13,7 +19,13 @@ from .steps import (
 )
 
 
-from .types import RequestStages
+from .types import (
+    Article,
+    RawArticle,
+    RequestStages,
+    RequestStatus,
+    StepInformation,
+)
 
 from mcp_agent.app import MCPApp
 from mcp_agent.config import (
@@ -23,6 +35,8 @@ from mcp_agent.config import (
     MCPServerSettings,
     OpenAISettings,
 )
+
+from relevance.scibert_scorer import score_articles_async
 
 from .agents.relevant_literature import (
     run_all_relevant_literature_agent,
@@ -78,8 +92,8 @@ def get_openai_settings():
     """Create OpenAI settings with a new AsyncClient for each request."""
     is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
     if is_in_docker:
-        base_url = "http://host.docker.internal:11434/v1"  # The local ollama server from within docker (native is faster on some machines including mine)
-        # base_url="http://ollama-instance:11434/v1",  # The ollama server running inside docker (docker handles DNS)
+        # base_url = "http://host.docker.internal:11434/v1"  # The local ollama server from within docker (native is faster on some machines including mine)
+        base_url = "http://ollama-instance:11434/v1"  # The ollama server running inside docker (docker handles DNS)
         pass
     else:
         base_url = "http://127.0.0.1:11434/v1"  # The ollama address when running without docker
@@ -96,7 +110,7 @@ def get_openai_settings():
         # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
     else:
         # default_model = "qwen3:0.6b"
-        default_model = "qwen3:4b"
+        default_model = "llama3.2:3b"
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
@@ -108,7 +122,7 @@ def get_openai_settings():
     return OpenAISettings(
         base_url=base_url,  # The selected ollama address
         api_key=gwdg_api_key or "ollama",
-        http_client=httpx.AsyncClient(timeout=30.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
+        http_client=httpx.AsyncClient(timeout=200.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
         default_model=default_model,  # type: ignore
     )
 
@@ -131,6 +145,26 @@ def create_mcp_app():
         ),
         human_input_callback=None,
     )
+
+
+async def recompute_relevance_scores(request_status: RequestStatus):
+    """Recompute SciBERT relevance scores for all papers."""
+
+    if not request_status.papers:
+        return
+
+    research_question = getattr(request_status.settings, "research_question", "") or "Academic research paper"
+    if not research_question:
+        return
+
+    try:
+        scores = await score_articles_async(research_question, request_status.papers)
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        print(f"Failed to compute relevance scores: {exc}")
+        return
+
+    for article, score in zip(request_status.papers, scores):
+        article.relevance_score = score
 
 
 # with mcp_app.run() as mcp_agent_app:
@@ -372,3 +406,288 @@ async def run_all_parse_papers(
         )
         request_status, step_info = await run_all_parse_papers_agent(request_status)
         return request_status, step_info
+
+# === WORKFLOW RESULTS STORAGE ===
+
+
+@app.post("/workflow_results")
+async def create_workflow_result(request_status: RequestStatus):
+    """Persist a new workflow request status"""
+    try:
+        await recompute_relevance_scores(request_status)
+        paper_manager = PaperManager()
+        result_id = paper_manager.upsert_workflow_result(None, request_status.model_dump())
+        return {
+            "success": True,
+            "workflow_id": result_id,
+            "request_status": request_status.model_dump(),
+        }
+    except Exception as e:
+        print(f"Create workflow error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save workflow: {str(e)}",
+        )
+
+
+@app.get("/workflow_results")
+async def get_workflow_results():
+    """Get all saved workflow results"""
+    try:
+        paper_manager = PaperManager()
+        results = paper_manager.get_all_workflow_results()
+        return results
+        
+    except Exception as e:
+        print(f"Get workflow results error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow results: {str(e)}"
+        )
+
+
+@app.get("/workflow_results/latest")
+async def get_latest_workflow_result():
+    try:
+        paper_manager = PaperManager()
+        result = paper_manager.get_latest_workflow_result()
+        if result is None:
+            return {"exists": False}
+        return {"exists": True, **result}
+    except Exception as e:
+        print(f"Get latest workflow result error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow result: {str(e)}",
+        )
+
+
+@app.put("/workflow_results/{workflow_id}")
+async def update_workflow_result(workflow_id: str, request_status: RequestStatus):
+    try:
+        await recompute_relevance_scores(request_status)
+        paper_manager = PaperManager()
+        result_id = paper_manager.upsert_workflow_result(
+            workflow_id, request_status.model_dump()
+        )
+        return {
+            "success": True,
+            "workflow_id": result_id,
+            "request_status": request_status.model_dump(),
+        }
+    except Exception as e:
+        print(f"Update workflow error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update workflow: {str(e)}",
+        )
+
+
+@app.get("/workflow_results/{result_id}")
+async def get_workflow_result(result_id: str):
+    """Get specific workflow result"""
+    try:
+        paper_manager = PaperManager()
+        result = paper_manager.get_workflow_result(result_id)
+        
+        if result:
+            return result
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Workflow result not found"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get workflow result error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow result: {str(e)}"
+        )
+
+# === PAPER MANAGEMENT ===
+
+@app.post("/add_paper")
+async def add_paper(
+    title: str,
+    authors: str = "",
+    abstract: str = "",
+    url: str = "",
+    year: int | None = None
+):
+    try:
+        paper_manager = PaperManager()
+        paper_id = paper_manager.add_paper(
+            title=title,
+            authors=authors,
+            abstract=abstract,
+            url=url,
+            year=year
+        )
+        return {"success": True, "id": paper_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add paper: {str(e)}")
+
+
+@app.get("/papers")
+async def get_all_papers():
+    try:
+        paper_manager = PaperManager()
+        return paper_manager.get_all_papers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get papers: {str(e)}")
+
+# === WORKFLOW PDF UPLOAD ===
+
+@app.post("/upload_for_workflow")
+async def upload_for_workflow(
+    file: UploadFile = File(...),
+    request_status_json: str = Form(...),
+    workflow_id: str | None = Form(default=None),
+):
+    """Upload a PDF, parse it, and append the result to the given RequestStatus."""
+
+    try:
+        request_status = RequestStatus.model_validate_json(request_status_json)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+
+    try:
+        os.makedirs("uploads", exist_ok=True)
+        file_id = str(uuid.uuid4())
+        file_path = f"uploads/{file_id}_{file.filename}"
+
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        parser = get_pdf_parser()
+        parsed_data = await parser.parse_pdf(file_path)
+
+        parsed_title = parsed_data.get("title") or os.path.splitext(os.path.basename(file_path))[0]
+        parsed_authors = parsed_data.get("authors") or "Unknown"
+        parsed_abstract = parsed_data.get("abstract") or "No abstract"
+
+        article = Article(
+            article=RawArticle(
+                title=parsed_title,
+                author=parsed_authors,
+                abstract=parsed_abstract,
+                url=file_path,
+            ),
+            problem_questions=None,
+            methods=None,
+        )
+
+        if request_status.papers is None:
+            request_status.papers = []
+        request_status.papers.append(article)
+
+        # Run complete MCP workflow for PDF (skip all Literature stages)
+        try:
+            mcp_app = create_mcp_app()
+            async with mcp_app.run() as mcp_agent_app:
+                mcp_agent_app.logger.info(f"Running complete MCP workflow for uploaded PDF")
+
+                # Run workflow steps until completion
+                step_count = 0
+                max_steps = 10  # Safety limit
+                executed_steps = []  # Debug: Track executed steps
+
+                # All stages that should be skipped for PDF uploads
+                literature_stages = {
+                    RequestStages.FINDING_LITERATURE
+                }
+
+                while step_count < max_steps:
+                    next_step_info = next_step(request_status)
+                    if not next_step_info:
+                        break  # Workflow complete
+
+                    step_name, single_step_func, _, stage = next_step_info
+
+                    # Skip Literature-related stages for PDF-sourced papers
+                    if stage in literature_stages:
+                        mcp_agent_app.logger.info(f"Skipping {stage.name} for PDF upload")
+                        executed_steps.append(f"SKIPPED: {step_name} (stage: {stage.name})")
+                        step_count += 1
+                        continue
+
+                    # Store state before step to check for progress
+                    status_before = request_status.model_dump()
+
+                    mcp_agent_app.logger.info(f"Executing step {step_count + 1}: {step_name} (stage: {stage.name})")
+                    executed_steps.append(f"EXECUTED: {step_name} (stage: {stage.name})")
+
+                    request_status, step_info = await single_step_func(request_status)
+
+                    # Check if progress was made
+                    status_after = request_status.model_dump()
+                    if status_before == status_after:
+                        mcp_agent_app.logger.warning(f"No progress made in step: {step_name}")
+                        executed_steps.append(f"NO_PROGRESS: {step_name} - breaking workflow")
+                        break
+
+                    step_count += 1
+
+                await recompute_relevance_scores(request_status)
+                paper_manager = PaperManager()
+                workflow_id = paper_manager.upsert_workflow_result(
+                    workflow_id, request_status.model_dump()
+                )
+
+                return {
+                    "success": True,
+                    "workflow_id": workflow_id,
+                    "request_status": request_status.model_dump(),
+                    "message": "PDF uploaded and MCP workflow completed successfully",
+                    "steps_completed": step_count,
+                    "workflow_finished": next_step(request_status) is None,
+                    "executed_steps": executed_steps,
+                    "next_step_would_be": next_step(request_status)[0] if next_step(request_status) else None,
+                }
+
+        except Exception as workflow_error:
+            # If workflow fails, still return the uploaded paper
+            print(f"MCP workflow error: {workflow_error}")
+            await recompute_relevance_scores(request_status)
+            paper_manager = PaperManager()
+            workflow_id = paper_manager.upsert_workflow_result(
+                workflow_id, request_status.model_dump()
+            )
+            return {
+                "success": True,
+                "workflow_id": workflow_id,
+                "request_status": request_status.model_dump(),
+                "message": "PDF uploaded successfully, but workflow failed",
+                "error": str(workflow_error),
+            }
+
+    except Exception as e:
+        print(f"Upload error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+
+@app.post("/upload_paper_pdf/{paper_id}")
+async def upload_paper_pdf(paper_id: int, file: UploadFile = File(...)):
+    """Upload a PDF and attach it to an existing paper in the DB"""
+    try:
+        paper_manager = PaperManager()
+
+        temp_path = f"/tmp/{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        success = paper_manager.upload_paper_pdf(paper_id, temp_path, file.filename)
+
+        os.remove(temp_path)  # tmp cleanup
+
+        if success:
+            return {"success": True, "message": "PDF uploaded successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to upload PDF")
+
+    except Exception as e:
+        print(f"Upload PDF error: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

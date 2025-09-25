@@ -1,15 +1,30 @@
 import sqlite3
 import os
 import shutil
-from typing import List, Dict, Any
+import json
+import uuid
+from typing import List, Dict, Any, Optional
+
 
 class PaperManager:
-    """Einfacher Paper Manager für Frontend"""
     
-    def __init__(self, db_path: str = "app/database/papers.db"):
+    def __init__(self, db_path: str | None = None):
+        if db_path is None:
+            db_dir = os.getenv("DATABASE_PATH", "app/database")
+            os.makedirs(db_dir, exist_ok=True)
+            db_path = os.path.join(db_dir, "papers.db")
+
+            legacy_db = os.path.join("app", "database", "papers.db")
+            if not os.path.exists(db_path) and os.path.exists(legacy_db):
+                try:
+                    shutil.copy2(legacy_db, db_path)
+                except OSError:
+                    pass
+
         self.db_path = db_path
         self._init_db()
-    
+
+
     def _init_db(self):
         """Erstelle Tabellen falls sie nicht existieren"""
         with sqlite3.connect(self.db_path) as conn:
@@ -30,6 +45,33 @@ class PaperManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            
+            # Workflow Results Tabelle
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS workflow_results (
+                    id TEXT PRIMARY KEY,
+                    research_question TEXT NOT NULL,
+                    result_data TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            try:
+                conn.execute(
+                    "ALTER TABLE workflow_results ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                )
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
+
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_results_created_at ON workflow_results(created_at)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_results_updated_at ON workflow_results(updated_at)"
+            )
+            
             conn.commit()
     
     def add_paper(self, title: str, authors: str = "", abstract: str = "", url: str = "", 
@@ -110,7 +152,7 @@ class PaperManager:
         except Exception as e:
             print(f"Error uploading PDF: {e}")
             return False
-    
+
     def get_paper_file_path(self, paper_id: int) -> str:
         """Dateipfad für ein Paper holen"""
         with sqlite3.connect(self.db_path) as conn:
@@ -211,3 +253,105 @@ class PaperManager:
     #                 "avg_relevance": round(row["avg_relevance"], 3) if row["avg_relevance"] else 0
     #             })
     #         return clusters
+    
+    # Workflow Results Management
+    def upsert_workflow_result(
+        self, result_id: str | None, request_status_dict: dict
+    ) -> str:
+        """Insert or update a workflow result."""
+
+        hydrated_id = result_id or str(uuid.uuid4())
+        research_question = (
+            request_status_dict.get("settings", {}).get("research_question", "Unknown")
+        )
+        result_json = json.dumps(request_status_dict, default=str)
+
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT INTO workflow_results (id, research_question, result_data)
+                VALUES (?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    research_question = excluded.research_question,
+                    result_data = excluded.result_data,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (hydrated_id, research_question, result_json),
+            )
+            conn.commit()
+
+        return hydrated_id
+
+    def save_workflow_result(self, request_status_dict: dict) -> str:
+        """Backward compatible helper to persist a workflow result."""
+
+        return self.upsert_workflow_result(None, request_status_dict)
+    
+    def get_all_workflow_results(self) -> List[Dict[str, Any]]:
+        """Get all workflow results for frontend"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, research_question, result_data, created_at, updated_at FROM workflow_results ORDER BY updated_at DESC"
+            ).fetchall()
+            
+            results = []
+            for row in rows:
+                try:
+                    result_data = json.loads(row["result_data"])
+                    results.append({
+                        "id": row["id"],
+                        "research_question": row["research_question"],
+                        "created_at": row["created_at"],
+                        "updated_at": row["updated_at"],
+                        "papers": result_data.get("papers", []),
+                        "key_questions": result_data.get("key_questions", []),
+                        "result": result_data.get("result", [])
+                    })
+                except json.JSONDecodeError:
+                    # Skip malformed entries
+                    continue
+            
+            return results
+    
+    def get_workflow_result(self, result_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific workflow result"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM workflow_results WHERE id = ?", (result_id,)
+            ).fetchone()
+            
+            if row:
+                try:
+                    return {
+                        "id": row["id"],
+                        "research_question": row["research_question"],
+                        "created_at": row["created_at"],
+                        "updated_at": row["updated_at"],
+                        "request_status": json.loads(row["result_data"])
+                    }
+                except json.JSONDecodeError:
+                    return None
+            return None
+
+    def get_latest_workflow_result(self) -> Optional[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM workflow_results ORDER BY updated_at DESC LIMIT 1"
+            ).fetchone()
+
+            if not row:
+                return None
+
+            try:
+                return {
+                    "id": row["id"],
+                    "research_question": row["research_question"],
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "request_status": json.loads(row["result_data"]),
+                }
+            except json.JSONDecodeError:
+                return None

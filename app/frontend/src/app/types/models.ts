@@ -12,6 +12,7 @@ export interface Article {
   article: RawArticle;
   problem_questions: string[] | null;
   methods: string[] | null;
+  relevance_score?: number;
 }
 export interface DraftHeading {
   title: string;

@@ -18,6 +18,17 @@ services:
     hostname: survey-machine-instance
     ports:
       - "8001:8001"
+    environment:
+      - DATABASE_PATH=/data
+      - GROBID_HOST=host.docker.internal
+      - AM_I_IN_DOCKER=true
+    volumes:
+      - ./docker-data/db:/data
+    depends_on:
+      ollama:
+        condition: service_started
+      # grobid:
+      #   condition: service_healthy
     networks:
       survey-machine:
         # 10.89.0.2
@@ -27,7 +38,8 @@ services:
     container_name: ollama-instance
     hostname: ollama-instance
     volumes:
-      - .ollama:/root/.ollama # The .ollama directory is a symlink to the main ollama directory
+      # - .ollama:/root/.ollama # The .ollama directory is a symlink to the main ollama directory
+      - ~/.ollama/models:/root/.ollama/models # For local models
     networks:
       survey-machine:
         # 10.89.0.3
@@ -47,12 +59,36 @@ services:
     hostname: literature_access
     ports:
       - "8000:8000" # Note: Ideally, this wouldn't be done and the service would be accessed via the internal network.
+    environment:
+      - DATABASE_PATH=/data
+      - AM_I_IN_DOCKER=true
+    volumes:
+      - ./docker-data/db:/data
     command: python -m literature_access.main --port 8000
     networks:
       survey-machine:
+  
+  # Optional: Grobid container (only if you have enough compute power)
+  # Uncomment the following lines to enable Grobid in container:
+  # grobid:
+  #   image: lfoppiano/grobid:0.8.0
+  #   container_name: grobid-instance
+  #   hostname: grobid
+  #   ports:
+  #     - "8070:8070"
+  #   networks:
+  #     - survey-machine
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8070/api/isalive"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
 
 # Necessary for the ollama container to work
 networks:
   survey-machine:
     driver: bridge
     # network_backend: netavark
+
+# Persist database files even after container removal
+volumes: {}

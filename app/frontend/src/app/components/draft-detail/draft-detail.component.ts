@@ -134,6 +134,7 @@ export class DraftDetailComponent {
       this.draftMarkdownHtml = null;
     }
   }
+
 }
 
 

@@ -140,10 +140,15 @@
 .relevance {
   background: #e8f5e8;
   color: #2d5a2d;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 64px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(45, 90, 45, 0.2);
 }
 
 .remove-btn {

@@ -29,9 +29,10 @@ export class ArticleStore {
   removePaperById(id: string) {
     this.updateStep(step => ({
       ...step,
+      saved_papers: step.saved_papers.filter(p => !this.isSameArticle(p, id)),
       status: {
         ...step.status,
-        papers: step.status.papers.filter(p => p.article.id !== id),
+        papers: step.status.papers.filter(p => !this.isSameArticle(p, id)),
       },
     }));
   }
@@ -53,5 +54,13 @@ export class ArticleStore {
       ...prev,
       current_step: updater(prev.current_step),
     }));
+  }
+
+  private isSameArticle(article: Article, identifier: string): boolean {
+    return (
+      article.article.id === identifier ||
+      article.article.url === identifier ||
+      article.article.title === identifier
+    );
   }
 }

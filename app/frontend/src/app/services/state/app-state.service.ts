@@ -8,6 +8,7 @@ import {
   StepState,
 } from "../../types/models";
 import { initialAppState, orderedRequestStages } from "../../types/state";
+import { ArticleStore } from "./article.store";
 
 @Injectable({
   providedIn: "root",
@@ -54,8 +55,26 @@ export class AppStateService {
     });
   }
 
+  hydrateFromBackend(
+    requestStatus: RequestStatus,
+    stepInformation: StepInformation | undefined,
+    stageOverride?: RequestStages,
+  ) {
+    this.state.update(prev => ({
+      ...prev,
+      current_step: {
+        ...prev.current_step,
+        status: requestStatus,
+        step_information: stepInformation ?? { warnings: [], errors: [] },
+        stage: stageOverride ?? prev.current_step.stage,
+        saved_papers: requestStatus?.papers ? [...requestStatus.papers] : [],
+      },
+    }));
+  }
+
   resetState() {
     this.state.set(initialAppState);
+    this.workflowId = null;
   }
 
   replaceArticlesAndRemoveSaved() {
@@ -92,5 +111,15 @@ export class AppStateService {
 
   get history(): HistoryEntry[] {
     return this.state().history;
+  }
+
+  private workflowId: string | null = null;
+
+  get currentWorkflowId(): string | null {
+    return this.workflowId;
+  }
+
+  setWorkflowId(workflowId: string | null) {
+    this.workflowId = workflowId;
   }
 }

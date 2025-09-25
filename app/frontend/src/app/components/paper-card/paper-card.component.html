@@ -10,7 +10,9 @@
   </div>
 
   <p class="abstract">{{ paper.article.abstract }}</p>
-
+  <div class="score-badge">
+    {{ ((paper.relevance_score ?? 0) * 100) | number:'1.0-0' }}% relevant
+  </div>
   <div class="actions">
     <a
       class="save-link"

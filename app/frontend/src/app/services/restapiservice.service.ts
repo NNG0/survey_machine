@@ -44,4 +44,30 @@ export class RESTAPIService {
       requestStatus,
     );
   }
+    uploadForWorkflow(file: File, requestStatus: RequestStatus, workflowId?: string | null): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('request_status_json', JSON.stringify(requestStatus));
+        if (workflowId) {
+          formData.append('workflow_id', workflowId);
+        }
+
+        return this.http.post(`${this.baseUrl}/upload_for_workflow`, formData);
+      }
+
+      getAllPapers(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/papers`);
+      }
+
+      createWorkflowStatus(requestStatus: RequestStatus): Observable<any> {
+        return this.http.post(`${this.baseUrl}/workflow_results`, requestStatus);
+      }
+
+      updateWorkflowStatus(workflowId: string, requestStatus: RequestStatus): Observable<any> {
+        return this.http.put(`${this.baseUrl}/workflow_results/${workflowId}`, requestStatus);
+      }
+
+      getLatestWorkflowStatus(): Observable<any> {
+        return this.http.get(`${this.baseUrl}/workflow_results/latest`);
+      }
 }

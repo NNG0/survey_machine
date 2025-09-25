@@ -32,33 +32,7 @@
       </button>
     </div>
     @for (paper of appState.currentStep.status.papers; track paper) {
-    <div class="paper-card">
-      <div class="paper-header">
-        <div class="paper-title">
-          <h3>{{ paper.article.title }}</h3>
-          <p class="meta">
-            <i class="fas fa-file-alt"></i> {{ paper.article.author }}
-          </p>
-        </div>
-        <div class="paper-actions">
-          <span class="relevance" title="Relevanz zur Forschungsfrage">
-          </span>
-          <button class="remove-btn" title="Aus Sammlung entfernen">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-
-      <p class="abstract">{{ paper.article.abstract }}</p>
-
-      <div class="tags">
-      </div>
-
-      <div class="citation">
-        <strong><i class="fas fa-quote-right"></i> Citation:</strong><br />
-        <a [href]="paper.article.doi" target="_blank">{{ paper.article.doi }}</a>
-      </div>
-    </div>
+    <app-paper-card [paper]="paper" mode="saved"></app-paper-card>
     }
   </div>
 

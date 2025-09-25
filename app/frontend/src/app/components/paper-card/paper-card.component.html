@@ -1,0 +1,42 @@
+<div class="card">
+  <div class="result-header">
+    <div class="result-title">
+      <h3>{{ paper.article.title }}</h3>
+      <p class="meta">
+        <i class="fas fa-file-alt"></i>
+        {{ paper.article.author }}
+      </p>
+    </div>
+  </div>
+
+  <p class="abstract">{{ paper.article.abstract }}</p>
+
+  <div class="actions">
+    <a
+      class="save-link"
+      [href]="goToArticle()"
+      target="_blank">
+      Go to paper
+    </a>
+
+    <ng-container [ngSwitch]="mode">
+      <!-- results mode -->
+      <button *ngSwitchCase="'results'"
+              class="save-link"
+              [class.saved]="isSaved()"
+              (click)="toggleSave()">
+        <i class="fas" [ngClass]="isSaved() ? 'fa-trash' : 'fa-bookmark'"></i>
+        {{ isSaved() ? 'Remove' : 'Save' }}
+      </button>
+
+      <!-- saved mode -->
+      <button *ngSwitchCase="'saved'"
+              class="remove-btn"
+              title="Aus Sammlung entfernen"
+              (click)="removePaper()">
+        <i class="fas fa-trash"></i>
+      </button>
+    </ng-container>
+  </div>
+</div>
+

@@ -6,11 +6,12 @@ import { DraftsService } from '../../services/drafts.service';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/state/app-state.service';
 import { ArticleStore } from '../../services/state/article.store';
+import { PaperCardComponent } from '../paper-card/paper-card.component';
 
 @Component({
   selector: 'app-collection',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaperCardComponent],
   templateUrl: './collection.component.html',
   styleUrls: ['./collection.component.css']
 })

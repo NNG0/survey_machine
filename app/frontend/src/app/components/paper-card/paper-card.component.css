@@ -1,0 +1,82 @@
+.card {
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 20px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.result-title {
+  max-width: 85%;
+}
+
+.result-title h3 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.meta {
+  margin: 0;
+  color: #666;
+  font-size: 0.95em;
+}
+
+.meta i {
+  margin-right: 6px;
+}
+
+.abstract {
+  margin: 16px 0;
+  color: #333;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-direction: row-reverse;
+  text-align: right;
+  margin-top: 12px;
+}
+
+.save-link {
+  background-color: #2e7d32; /* green */
+  margin-left: 12px;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-link:hover {
+  background-color: #27672a;
+}
+
+.save-link:active {
+  background-color: #1f5422;
+}
+
+.save-link.saved {
+  background-color: #d32f2f; /* red */
+}
+
+.save-link.saved:hover {
+  background-color: #b71c1c;
+}

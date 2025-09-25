@@ -1,43 +1,5 @@
 <div class="results" *ngIf="showResults">
-  <!--div class="card" *ngFor="let paper of [exampleResult]">
-  <div class="card" *ngFor="let paper of appState.currentStep.status.papers">
-    <div class="result-header">
-      <div class="result-title">
-        <h3>{{ paper.title }}</h3>
-        <p class="meta">
-          <i class="fas fa-file-alt"></i> {{ paper.authors }} • {{ paper.year }} • {{ paper.journal }}
-        </p>
-      </div>
-    </div>
-
-  </div-->
   @for (paper of appState.currentStep.status.papers; track paper) {
-  <div class="card">
-    <div class="result-header">
-      <div class="result-title">
-        <h3>{{ paper.article.title }}</h3>
-        <p class="meta">
-          <i class="fas fa-file-alt"></i> {{ paper.article.author }}        </p>
-      </div>
-    </div>
-
-    <p class="abstract">{{ paper.article.abstract }}</p>
-
-    <div class="actions">
-      <a
-        class="save-link"
-        [href]="goToArticle(paper.article)"
-        target="_blank">
-        Go to paper
-      </a>
-
-      <button class="save-link"
-              [class.saved]="isSaved(paper)"
-              (click)="toggleSave(paper)">
-        <i class="fas" [ngClass]="isSaved(paper) ? 'fa-trash' : 'fa-bookmark'"></i>
-        {{ isSaved(paper) ? 'Remove' : 'Save' }}
-      </button>
-    </div>
-  </div>
+    <app-paper-card [paper]="paper" mode="results"></app-paper-card>
   }
 </div>

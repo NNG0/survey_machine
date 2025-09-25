@@ -91,12 +91,15 @@
 }
 
 .actions {
+  display: flex;
+  flex-direction: row-reverse;
   text-align: right;
   margin-top: 12px;
 }
 
 .save-link {
   background-color: #2e7d32; /* green */
+  margin-left: 12px;
   color: white;
   border: none;
   padding: 10px 20px;

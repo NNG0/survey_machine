@@ -5,7 +5,7 @@ export interface RawArticle {
   savedAt: string | null;
   abstract: string | null;
   url: string | null;
-  doi?: string | null;
+  doi: string | null;
 }
 
 export interface Article {

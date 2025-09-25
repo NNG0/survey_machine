@@ -18,8 +18,15 @@ export class PaperCardComponent {
     return this.articleStore.isArticleSaved(this.paper)
   }
 
-  goToArticle(): string {
-    return 'https://doi.org/' + this.paper.article.doi;
+  goToArticle(): string | null {
+    if (this.paper.article.doi && this.paper.article.doi.trim() !== '')
+    {
+      return 'https://doi.org/' + this.paper.article.doi;
+    } else if (this.paper.article.url && this.paper.article.url.trim() !== '') {
+      return this.paper.article.url;
+    } else {
+      return null;
+    }
   }
 
   toggleSave() {

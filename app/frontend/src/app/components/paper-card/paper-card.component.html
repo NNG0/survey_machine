@@ -14,31 +14,22 @@
     {{ ((paper.relevance_score ?? 0) * 100) | number:'1.0-0' }}% relevant
   </div>
   <div class="actions">
+    <a class="save-link" *ngIf="goToArticle()" [href]="goToArticle()" target="_blank">
+      Go to paper
+    </a>
+
     <ng-container [ngSwitch]="mode">
       <!-- results mode -->
-      <button *ngSwitchCase="'results'"
-              class="save-link"
-              [class.saved]="isSaved()"
-              (click)="toggleSave()">
+      <button *ngSwitchCase="'results'" class="save-link" [class.saved]="isSaved()" (click)="toggleSave()">
         <i class="fas" [ngClass]="isSaved() ? 'fa-trash' : 'fa-bookmark'"></i>
         {{ isSaved() ? 'Remove' : 'Save' }}
       </button>
 
       <!-- saved mode -->
-      <button *ngSwitchCase="'saved'"
-              class="remove-btn"
-              title="Aus Sammlung entfernen"
-              (click)="removePaper()">
+      <button *ngSwitchCase="'saved'" class="remove-btn" title="Aus Sammlung entfernen" (click)="removePaper()">
         <i class="fas fa-trash"></i>
       </button>
     </ng-container>
 
-    <a
-      class="save-link"
-      [href]="goToArticle()"
-      target="_blank">
-      Go to paper
-    </a>
   </div>
 </div>
-

@@ -12,4 +12,6 @@
 .env
 
 
+docker-data/** 
+
 app/MCP/mcp_agent.secrets.yaml

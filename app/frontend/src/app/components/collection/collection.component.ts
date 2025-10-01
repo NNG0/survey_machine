@@ -36,25 +36,7 @@ export class CollectionComponent implements OnInit {
       return;
     }
 
-    this.articleStore.removePaperById(id);
-
-    const updatedStatus = structuredClone(this.appState.currentStep.status);
-    const workflowId = this.appState.currentWorkflowId;
-
-    const persistence$ = workflowId
-      ? this.restApi.updateWorkflowStatus(workflowId, updatedStatus)
-      : this.restApi.createWorkflowStatus(updatedStatus);
-
-    persistence$.subscribe({
-      next: (persisted) => {
-        if (persisted?.workflow_id) {
-          this.appState.setWorkflowId(persisted.workflow_id);
-        }
-      },
-      error: (error) => {
-        console.warn('Failed to persist workflow after removal:', error);
-      }
-    });
+    this.articleStore.removePaperById(id).subscribe();
   }
 
   removeAllPapers() {

@@ -1,10 +1,18 @@
 import { Injectable } from "@angular/core";
 import { AppStateService } from "./app-state.service";
 import { Article, StepState } from "../../types/models";
+import { PapersService } from "../papers.service";
+import { Observable, of } from "rxjs";
+import { catchError, map, switchMap } from "rxjs/operators";
+import { RESTAPIService } from "../restapiservice.service";
 
 @Injectable({ providedIn: 'root' })
 export class ArticleStore {
-  constructor(private app: AppStateService) {}
+  constructor(
+    private app: AppStateService,
+    private papersService: PapersService,
+    private restApi: RESTAPIService
+  ) {}
 
   toggleSavedPaper(article: Article) {
     this.updateStep(step => {
@@ -26,15 +34,43 @@ export class ArticleStore {
     }));
   }
 
-  removePaperById(id: string) {
+  removePaperById(id: string): Observable<void> {
+    // Update state first
     this.updateStep(step => ({
       ...step,
-      saved_papers: step.saved_papers.filter(p => !this.isSameArticle(p, id)),
+      saved_papers: step.saved_papers.filter(p => p.article.id !== id),
       status: {
         ...step.status,
-        papers: step.status.papers.filter(p => !this.isSameArticle(p, id)),
+        papers: step.status.papers.filter(p => p.article.id !== id),
       },
     }));
+
+    // Get updated status for persistence
+    const updatedStatus = this.app.currentStep.status;
+    const workflowId = this.app.currentWorkflowId;
+
+    // Try to delete from DB (ignore errors for workflow papers)
+    const dbDelete$ = this.papersService.deletePaper(id).pipe(
+      catchError(() => of(void 0))
+    );
+
+    // Persist workflow
+    const persistence$ = workflowId
+      ? this.restApi.updateWorkflowStatus(workflowId, updatedStatus)
+      : this.restApi.createWorkflowStatus(updatedStatus);
+
+    // Run both in parallel, return when persistence completes
+    return persistence$.pipe(
+      map((persisted) => {
+        if (persisted?.workflow_id) {
+          this.app.setWorkflowId(persisted.workflow_id);
+        }
+      }),
+      catchError((error) => {
+        console.warn('Failed to persist workflow after removal:', error);
+        return of(void 0);
+      })
+    );
   }
 
   addPaper(paper: Article) {

@@ -92,13 +92,22 @@ class PaperManager:
             # Erst PDF-Datei löschen falls vorhanden
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                row = conn.execute("SELECT file_path FROM papers WHERE id = ?", (int(paper_id),)).fetchone()
-                
+
+                # Versuche zuerst als Integer-ID, sonst als URL
+                try:
+                    row = conn.execute("SELECT file_path FROM papers WHERE id = ?", (int(paper_id),)).fetchone()
+                except ValueError:
+                    row = conn.execute("SELECT file_path FROM papers WHERE url = ?", (paper_id,)).fetchone()
+
                 if row and row["file_path"] and os.path.exists(row["file_path"]):
                     os.remove(row["file_path"])
-                
+
                 # Paper aus DB löschen
-                cursor = conn.execute("DELETE FROM papers WHERE id = ?", (int(paper_id),))
+                try:
+                    cursor = conn.execute("DELETE FROM papers WHERE id = ?", (int(paper_id),))
+                except ValueError:
+                    cursor = conn.execute("DELETE FROM papers WHERE url = ?", (paper_id,))
+
                 conn.commit()
                 return cursor.rowcount > 0
         except Exception as e:

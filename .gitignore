@@ -15,3 +15,11 @@
 docker-data/** 
 
 app/MCP/mcp_agent.secrets.yaml
+
+# Docker / DB / Cache
+docker-data/
+*.db
+*.lock
+*.safetensors
+*.json
+*.jinja

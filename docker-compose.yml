@@ -22,6 +22,7 @@ services:
       - DATABASE_PATH=/data
       - GROBID_HOST=host.docker.internal
       - AM_I_IN_DOCKER=true
+      - GWDG_API_KEY=${GWDG_API_KEY}
     volumes:
       - ./docker-data/db:/data
     depends_on:

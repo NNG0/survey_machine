@@ -34,6 +34,6 @@ export class PaperCardComponent {
   }
 
   removePaper() {
-    this.articleStore.removePaperById(this.paper.article.id)
+    this.articleStore.removePaperById(this.paper.article.id).subscribe()
   }
 }

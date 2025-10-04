@@ -31,7 +31,7 @@
         <i class="fas fa-trash"></i> Delete all
       </button>
     </div>
-    @for (paper of appState.currentStep.status.papers; track paper) {
+    @for (paper of appState.currentStep.status.papers; track paper.article.id) {
     <app-paper-card [paper]="paper" mode="saved"></app-paper-card>
     }
   </div>

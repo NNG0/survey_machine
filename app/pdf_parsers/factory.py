@@ -42,7 +42,11 @@ def _resolve_grobid_base_url() -> str:
     if port_override:
         grobid_port = int(port_override)
     else:
-        if host_override and host_override in {"localhost", "127.0.0.1", "host.docker.internal"}:
+        if host_override and host_override in {
+            "localhost",
+            "127.0.0.1",
+            "host.docker.internal",
+        }:
             grobid_port = 8090
         elif is_in_docker:
             grobid_port = 8070

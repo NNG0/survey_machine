@@ -76,7 +76,7 @@ class PythonParser(PDFParser):
 
     def _extract_title_from_text(self, text: str) -> str:
         """Extract title from PDF text content"""
-        lines = text.split('\n')
+        lines = text.split("\n")
 
         # Look for title patterns in first few lines
         for i, line in enumerate(lines[:10]):
@@ -87,7 +87,10 @@ class PythonParser(PDFParser):
                 continue
 
             # Skip lines that look like headers/footers
-            if any(word in line.lower() for word in ['page', 'doi:', 'arxiv:', 'www.', 'http']):
+            if any(
+                word in line.lower()
+                for word in ["page", "doi:", "arxiv:", "www.", "http"]
+            ):
                 continue
 
             # Look for title-like formatting
@@ -99,7 +102,7 @@ class PythonParser(PDFParser):
     def _looks_like_title(self, line: str) -> bool:
         """Determine if a line looks like a title"""
         # Remove common formatting
-        clean_line = re.sub(r'[^\w\s]', '', line).strip()
+        clean_line = re.sub(r"[^\w\s]", "", line).strip()
 
         # Check length and word count
         words = clean_line.split()
@@ -107,7 +110,7 @@ class PythonParser(PDFParser):
             return False
 
         # Avoid lines with too many numbers or special patterns
-        if re.search(r'\d{4}', line):  # Years
+        if re.search(r"\d{4}", line):  # Years
             return False
 
         # Title should have some capital letters
@@ -119,7 +122,7 @@ class PythonParser(PDFParser):
 
     def _extract_authors_from_text(self, text: str) -> str:
         """Extract authors from PDF text content"""
-        lines = text.split('\n')
+        lines = text.split("\n")
 
         # Look for author patterns after title
         for line in lines[:20]:
@@ -142,9 +145,9 @@ class PythonParser(PDFParser):
         """Determine if a line looks like author names"""
         # Common author patterns
         author_patterns = [
-            r'[A-Z][a-z]+ [A-Z][a-z]+',  # FirstName LastName
-            r'[A-Z]\. [A-Z][a-z]+',      # F. LastName
-            r'[A-Z][a-z]+, [A-Z]\.',     # LastName, F.
+            r"[A-Z][a-z]+ [A-Z][a-z]+",  # FirstName LastName
+            r"[A-Z]\. [A-Z][a-z]+",  # F. LastName
+            r"[A-Z][a-z]+, [A-Z]\.",  # LastName, F.
         ]
 
         for pattern in author_patterns:
@@ -152,8 +155,10 @@ class PythonParser(PDFParser):
                 return True
 
         # Check for comma-separated names
-        if ',' in line and not any(word in line.lower() for word in ['university', 'department', 'email']):
-            parts = line.split(',')
+        if "," in line and not any(
+            word in line.lower() for word in ["university", "department", "email"]
+        ):
+            parts = line.split(",")
             if len(parts) >= 2 and all(len(p.strip()) > 2 for p in parts[:3]):
                 return True
 
@@ -162,12 +167,12 @@ class PythonParser(PDFParser):
     def _clean_authors(self, author_line: str) -> str:
         """Clean and format author names"""
         # Remove common suffixes/affiliations
-        cleaned = re.sub(r'\d+', '', author_line)  # Remove numbers
-        cleaned = re.sub(r'[^\w\s,.-]', '', cleaned)  # Keep only basic chars
+        cleaned = re.sub(r"\d+", "", author_line)  # Remove numbers
+        cleaned = re.sub(r"[^\w\s,.-]", "", cleaned)  # Keep only basic chars
 
         # Split by common delimiters
         authors = []
-        for delimiter in [',', ' and ', ' & ']:
+        for delimiter in [",", " and ", " & "]:
             if delimiter in cleaned:
                 parts = cleaned.split(delimiter)
                 authors.extend([p.strip() for p in parts if len(p.strip()) > 2])
@@ -179,7 +184,7 @@ class PythonParser(PDFParser):
         if len(authors) > 5:
             return f"{', '.join(authors[:3])} et al."
         elif authors:
-            return ', '.join(authors)
+            return ", ".join(authors)
 
         return ""
 
@@ -187,8 +192,8 @@ class PythonParser(PDFParser):
         """Extract abstract from PDF text content"""
         # Look for abstract section
         abstract_patterns = [
-            r'(?i)abstract[:\s]*(.+?)(?=\n\s*\n|\n\s*keywords|\n\s*introduction|\n\s*1\.)',
-            r'(?i)summary[:\s]*(.+?)(?=\n\s*\n|\n\s*keywords|\n\s*introduction)',
+            r"(?i)abstract[:\s]*(.+?)(?=\n\s*\n|\n\s*keywords|\n\s*introduction|\n\s*1\.)",
+            r"(?i)summary[:\s]*(.+?)(?=\n\s*\n|\n\s*keywords|\n\s*introduction)",
         ]
 
         for pattern in abstract_patterns:
@@ -196,8 +201,8 @@ class PythonParser(PDFParser):
             if match:
                 abstract = match.group(1).strip()
                 # Clean up the abstract
-                abstract = re.sub(r'\s+', ' ', abstract)  # Normalize whitespace
-                abstract = re.sub(r'\n+', ' ', abstract)  # Remove newlines
+                abstract = re.sub(r"\s+", " ", abstract)  # Normalize whitespace
+                abstract = re.sub(r"\n+", " ", abstract)  # Remove newlines
 
                 # Limit length
                 return self._trim_text(abstract, 1200)
@@ -206,18 +211,21 @@ class PythonParser(PDFParser):
 
     def _extract_first_paragraph(self, text: str) -> str:
         """Extract first substantial paragraph as fallback abstract"""
-        lines = text.split('\n')
+        lines = text.split("\n")
         paragraph = ""
 
         for line in lines:
             line = line.strip()
 
             # Skip headers, short lines, or lines with too many special chars
-            if len(line) < 20 or line.count(' ') < 3:
+            if len(line) < 20 or line.count(" ") < 3:
                 continue
 
             # Avoid lines that look like metadata
-            if any(word in line.lower() for word in ['doi:', 'arxiv:', 'page', 'figure', 'table']):
+            if any(
+                word in line.lower()
+                for word in ["doi:", "arxiv:", "page", "figure", "table"]
+            ):
                 continue
 
             # Start building paragraph
@@ -228,8 +236,12 @@ class PythonParser(PDFParser):
                 break
 
         # Clean and limit
-        paragraph = re.sub(r'\s+', ' ', paragraph).strip()
-        return self._trim_text(paragraph, 600) if len(paragraph) > 50 else "No abstract available"
+        paragraph = re.sub(r"\s+", " ", paragraph).strip()
+        return (
+            self._trim_text(paragraph, 600)
+            if len(paragraph) > 50
+            else "No abstract available"
+        )
 
     def _trim_text(self, text: str, limit: int) -> str:
         """Trim text to a sensible limit while preserving whole words."""

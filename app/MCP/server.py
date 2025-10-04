@@ -1,5 +1,6 @@
 import os
 import uuid
+import time
 from datetime import datetime
 
 import httpx
@@ -11,8 +12,6 @@ from database.paper_manager import PaperManager
 from pdf_parsers.factory import get_pdf_parser
 
 from .steps import (
-    RequestStatus,
-    StepInformation,
     run_single_next_step,
     run_single_stage,
     run_until_before_stage,
@@ -151,10 +150,15 @@ def create_mcp_app():
 async def recompute_relevance_scores(request_status: RequestStatus):
     """Recompute SciBERT relevance scores for all papers."""
 
+    # DEBUG: time these operations
+    start_time = time.time()
     if not request_status.papers:
         return
 
-    research_question = getattr(request_status.settings, "research_question", "") or "Academic research paper"
+    research_question = (
+        getattr(request_status.settings, "research_question", "")
+        or "Academic research paper"
+    )
     if not research_question:
         return
 
@@ -166,6 +170,11 @@ async def recompute_relevance_scores(request_status: RequestStatus):
 
     for article, score in zip(request_status.papers, scores):
         article.relevance_score = score
+
+    end_time = time.time()
+    print(
+        f"Recomputed relevance scores for {len(request_status.papers)} papers in {end_time - start_time:.2f} seconds"
+    )
 
 
 # with mcp_app.run() as mcp_agent_app:
@@ -412,6 +421,7 @@ async def run_all_parse_papers(
         request_status, step_info = await run_all_parse_papers_agent(request_status)
         return request_status, step_info
 
+
 # === WORKFLOW RESULTS STORAGE ===
 
 
@@ -421,7 +431,9 @@ async def create_workflow_result(request_status: RequestStatus):
     try:
         await recompute_relevance_scores(request_status)
         paper_manager = PaperManager()
-        result_id = paper_manager.upsert_workflow_result(None, request_status.model_dump())
+        result_id = paper_manager.upsert_workflow_result(
+            None, request_status.model_dump()
+        )
         return {
             "success": True,
             "workflow_id": result_id,
@@ -442,12 +454,11 @@ async def get_workflow_results():
         paper_manager = PaperManager()
         results = paper_manager.get_all_workflow_results()
         return results
-        
+
     except Exception as e:
         print(f"Get workflow results error: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get workflow results: {str(e)}"
+            status_code=500, detail=f"Failed to get workflow results: {str(e)}"
         )
 
 
@@ -494,25 +505,23 @@ async def get_workflow_result(result_id: str):
     try:
         paper_manager = PaperManager()
         result = paper_manager.get_workflow_result(result_id)
-        
+
         if result:
             return result
         else:
-            raise HTTPException(
-                status_code=404,
-                detail="Workflow result not found"
-            )
-            
+            raise HTTPException(status_code=404, detail="Workflow result not found")
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"Get workflow result error: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get workflow result: {str(e)}"
+            status_code=500, detail=f"Failed to get workflow result: {str(e)}"
         )
 
+
 # === PAPER MANAGEMENT ===
+
 
 @app.post("/add_paper")
 async def add_paper(
@@ -520,16 +529,12 @@ async def add_paper(
     authors: str = "",
     abstract: str = "",
     url: str = "",
-    year: int | None = None
+    year: int | None = None,
 ):
     try:
         paper_manager = PaperManager()
         paper_id = paper_manager.add_paper(
-            title=title,
-            authors=authors,
-            abstract=abstract,
-            url=url,
-            year=year
+            title=title, authors=authors, abstract=abstract, url=url, year=year
         )
         return {"success": True, "id": paper_id}
     except Exception as e:
@@ -544,7 +549,9 @@ async def get_all_papers():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get papers: {str(e)}")
 
+
 # === WORKFLOW PDF UPLOAD ===
+
 
 @app.post("/upload_for_workflow")
 async def upload_for_workflow(
@@ -571,7 +578,9 @@ async def upload_for_workflow(
         parser = get_pdf_parser()
         parsed_data = await parser.parse_pdf(file_path)
 
-        parsed_title = parsed_data.get("title") or os.path.splitext(os.path.basename(file_path))[0]
+        parsed_title = (
+            parsed_data.get("title") or os.path.splitext(os.path.basename(file_path))[0]
+        )
         parsed_authors = parsed_data.get("authors") or "Unknown"
         parsed_abstract = parsed_data.get("abstract") or "No abstract"
 
@@ -597,7 +606,9 @@ async def upload_for_workflow(
         try:
             mcp_app = create_mcp_app()
             async with mcp_app.run() as mcp_agent_app:
-                mcp_agent_app.logger.info(f"Running complete MCP workflow for uploaded PDF")
+                mcp_agent_app.logger.info(
+                    "Running complete MCP workflow for uploaded PDF"
+                )
 
                 # Run workflow steps until completion
                 step_count = 0
@@ -605,9 +616,7 @@ async def upload_for_workflow(
                 executed_steps = []  # Debug: Track executed steps
 
                 # All stages that should be skipped for PDF uploads
-                literature_stages = {
-                    RequestStages.FINDING_LITERATURE
-                }
+                literature_stages = {RequestStages.FINDING_LITERATURE}
 
                 while step_count < max_steps:
                     next_step_info = next_step(request_status)
@@ -618,24 +627,36 @@ async def upload_for_workflow(
 
                     # Skip Literature-related stages for PDF-sourced papers
                     if stage in literature_stages:
-                        mcp_agent_app.logger.info(f"Skipping {stage.name} for PDF upload")
-                        executed_steps.append(f"SKIPPED: {step_name} (stage: {stage.name})")
+                        mcp_agent_app.logger.info(
+                            f"Skipping {stage.name} for PDF upload"
+                        )
+                        executed_steps.append(
+                            f"SKIPPED: {step_name} (stage: {stage.name})"
+                        )
                         step_count += 1
                         continue
 
                     # Store state before step to check for progress
                     status_before = request_status.model_dump()
 
-                    mcp_agent_app.logger.info(f"Executing step {step_count + 1}: {step_name} (stage: {stage.name})")
-                    executed_steps.append(f"EXECUTED: {step_name} (stage: {stage.name})")
+                    mcp_agent_app.logger.info(
+                        f"Executing step {step_count + 1}: {step_name} (stage: {stage.name})"
+                    )
+                    executed_steps.append(
+                        f"EXECUTED: {step_name} (stage: {stage.name})"
+                    )
 
                     request_status, step_info = await single_step_func(request_status)
 
                     # Check if progress was made
                     status_after = request_status.model_dump()
                     if status_before == status_after:
-                        mcp_agent_app.logger.warning(f"No progress made in step: {step_name}")
-                        executed_steps.append(f"NO_PROGRESS: {step_name} - breaking workflow")
+                        mcp_agent_app.logger.warning(
+                            f"No progress made in step: {step_name}"
+                        )
+                        executed_steps.append(
+                            f"NO_PROGRESS: {step_name} - breaking workflow"
+                        )
                         break
 
                     step_count += 1
@@ -654,7 +675,9 @@ async def upload_for_workflow(
                     "steps_completed": step_count,
                     "workflow_finished": next_step(request_status) is None,
                     "executed_steps": executed_steps,
-                    "next_step_would_be": next_step(request_status)[0] if next_step(request_status) else None,
+                    "next_step_would_be": next_step(request_status)[0]
+                    if next_step(request_status)
+                    else None,
                 }
 
         except Exception as workflow_error:
@@ -676,6 +699,7 @@ async def upload_for_workflow(
     except Exception as e:
         print(f"Upload error: {e}")
         raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+
 
 @app.post("/upload_paper_pdf/{paper_id}")
 async def upload_paper_pdf(paper_id: int, file: UploadFile = File(...)):

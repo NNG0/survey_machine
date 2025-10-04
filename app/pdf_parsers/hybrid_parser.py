@@ -43,7 +43,9 @@ class HybridParser(PDFParser):
 
         python_data = await self.python_parser.parse_pdf(file_path)
 
-        if grobid_error and "Failed to parse PDF" not in python_data.get("abstract", ""):
+        if grobid_error and "Failed to parse PDF" not in python_data.get(
+            "abstract", ""
+        ):
             python_data["abstract"] = self._append_error_hint(
                 python_data.get("abstract", ""), grobid_error
             )
@@ -84,7 +86,10 @@ class HybridParser(PDFParser):
 
     def _is_complete(self, result: Dict[str, str]) -> bool:
         """Determine if Grobid already delivered all relevant fields."""
-        return all(self._has_value(result.get(field)) for field in ("title", "authors", "abstract"))
+        return all(
+            self._has_value(result.get(field))
+            for field in ("title", "authors", "abstract")
+        )
 
     def _merge_results(
         self,

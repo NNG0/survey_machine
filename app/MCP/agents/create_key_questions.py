@@ -31,7 +31,6 @@ async def run_all_create_key_questions_agent(
     Do not include explanations or additional text.
     """
 
-
     key_questions = await run_basic_ollama_agent(
         name="create_key_questions",
         prompt=prompt,

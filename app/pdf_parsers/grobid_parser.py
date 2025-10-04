@@ -24,7 +24,6 @@ class GrobidParser(PDFParser):
             # Lokal immer Port 8090
             self.grobid_urls = ["http://localhost:8090"]
 
-
     async def parse_pdf(self, file_path: str) -> Dict[str, str]:
         """Parse PDF using Grobid service with fallback URLs"""
         last_error = None
@@ -40,7 +39,9 @@ class GrobidParser(PDFParser):
                 if response.status_code == 200:
                     return self._extract_metadata_from_xml(response.text)
                 else:
-                    last_error = f"Grobid request failed: {response.status_code} at {url}"
+                    last_error = (
+                        f"Grobid request failed: {response.status_code} at {url}"
+                    )
             except Exception as e:
                 last_error = f"{url} → {e}"
                 print(f"Grobid parsing failed on {url}: {e}")
@@ -73,7 +74,9 @@ class GrobidParser(PDFParser):
             authors = []
             for author in root.findall(".//tei:titleStmt/tei:author", ns):
                 name_parts = []
-                for el in author.findall(".//tei:forename", ns) + author.findall(".//tei:surname", ns):
+                for el in author.findall(".//tei:forename", ns) + author.findall(
+                    ".//tei:surname", ns
+                ):
                     if el.text:
                         name_parts.append(el.text.strip())
                 name = " ".join(name_parts)
@@ -83,7 +86,9 @@ class GrobidParser(PDFParser):
             if not authors:
                 for author in root.findall(".//tei:sourceDesc//tei:author", ns):
                     name_parts = []
-                    for el in author.findall(".//tei:forename", ns) + author.findall(".//tei:surname", ns):
+                    for el in author.findall(".//tei:forename", ns) + author.findall(
+                        ".//tei:surname", ns
+                    ):
                         if el.text:
                             name_parts.append(el.text.strip())
                     name = " ".join(name_parts)
@@ -107,4 +112,8 @@ class GrobidParser(PDFParser):
 
         except Exception as e:
             print(f"XML parsing error: {e}")
-            return {"title": "Unknown Title", "authors": "Unknown Authors", "abstract": f"Failed to parse XML: {str(e)}"}
+            return {
+                "title": "Unknown Title",
+                "authors": "Unknown Authors",
+                "abstract": f"Failed to parse XML: {str(e)}",
+            }

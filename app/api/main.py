@@ -5,7 +5,8 @@ from pydantic import BaseModel
 import shutil
 import os
 import sys
-sys.path.append('..')
+
+sys.path.append("..")
 from database.paper_manager import PaperManager
 
 app = FastAPI(title="Survey Machine API", version="1.0.0")
@@ -19,6 +20,7 @@ app.add_middleware(
 
 manager = PaperManager(db_path="database/papers.db")
 
+
 class PaperCreate(BaseModel):
     title: str
     authors: str = ""
@@ -29,20 +31,24 @@ class PaperCreate(BaseModel):
     cluster_id: Optional[int] = None
     cluster_label: Optional[str] = None
 
+
 @app.get("/")
 async def root():
     return {"message": "Survey Machine API"}
+
 
 @app.get("/papers")
 async def get_all_papers():
     """Alle Papers holen"""
     return manager.get_all_papers()
 
+
 @app.post("/papers")
 async def create_paper(paper: PaperCreate):
     """Paper erstellen"""
     paper_id = manager.add_paper(**paper.dict())
     return {"id": paper_id, "message": "Paper created successfully"}
+
 
 @app.delete("/papers/{paper_id}")
 async def delete_paper(paper_id: str):
@@ -52,34 +58,37 @@ async def delete_paper(paper_id: str):
         raise HTTPException(status_code=404, detail="Paper not found")
     return {"message": "Paper deleted successfully"}
 
+
 @app.delete("/papers")
 async def delete_all_papers():
     """Alle Papers löschen"""
     count = manager.delete_all_papers()
     return {"message": f"Deleted {count} papers"}
 
+
 @app.post("/papers/{paper_id}/upload-pdf")
 async def upload_pdf(paper_id: int, file: UploadFile = File(...)):
     """PDF für Paper hochladen"""
-    if not file.filename.endswith('.pdf'):
+    if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files allowed")
-    
+
     temp_file = f"temp_{file.filename}"
     try:
         with open(temp_file, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         success = manager.upload_paper_pdf(paper_id, temp_file, file.filename)
         os.remove(temp_file)
-        
+
         if not success:
             raise HTTPException(status_code=500, detail="Upload failed")
         return {"message": "PDF uploaded successfully"}
-    
+
     except Exception as e:
         if os.path.exists(temp_file):
             os.remove(temp_file)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/papers/{paper_id}/file")
 async def get_paper_file(paper_id: int):
@@ -89,6 +98,8 @@ async def get_paper_file(paper_id: int):
         raise HTTPException(status_code=404, detail="No file found for this paper")
     return {"file_path": file_path}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

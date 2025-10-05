@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProjectItem, ProjectsService } from '../../services/projects.service';
-import { RequestStages } from '../../types/models';
+import { Article, RequestStages } from '../../types/models';
 import { marked } from 'marked';
 import { AppStateService } from '../../services/state/app-state.service';
 import { RESTAPIService } from '../../services/restapiservice.service';
@@ -49,6 +49,31 @@ export class DraftDetailComponent {
     if (updated) {
       this.draft = updated;
     }
+  }
+
+  private generateBlankArticle(): Article {
+    const random_id1 = Math.random().toString(36).substring(2, 13);
+    const random_id2 = Math.random().toString(36).substring(2, 13);
+    const random_id = random_id1 + random_id2;
+    return {
+      article: {
+        id: random_id,
+        title: null,
+        author: null,
+        savedAt: null,
+        abstract: null,
+        url: null,
+        doi: null,
+      },
+      problem_questions: null,
+      methods: null,
+      relevance_score: undefined,
+    };
+  }
+
+  addNewPaper(): void {
+    this.draft.requestStatus.papers.push(this.generateBlankArticle());
+    this.onRequestStatusChange();
   }
 
   // Debounced auto-save for any requestStatus changes

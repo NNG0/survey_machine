@@ -104,10 +104,12 @@
                     <button class="remove-btn" (click)="rs.key_questions![i][1]!.splice(j, 1); onRequestStatusChange()"
                       title="Remove paper">❌</button>
                   </div>
-                  <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()" style="margin-top: 8px;">Add Related Paper</button>
+                  <button class="btn" (click)="rs.key_questions![i][1]!.push(''); onRequestStatusChange()"
+                    style="margin-top: 8px;">Add Related Paper</button>
                 </div>
                 <ng-template #addPapersBtn>
-                  <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related Paper</button>
+                  <button class="btn" (click)="rs.key_questions![i][1] = []; onRequestStatusChange()">Add Related
+                    Paper</button>
                 </ng-template>
               </div>
 
@@ -119,7 +121,8 @@
                     placeholder="Enter summarized survey result" (ngModelChange)="onRequestStatusChange()"></textarea>
                 </ng-container>
                 <ng-template #addSurveyResultBtn>
-                  <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add Survey Result</button>
+                  <button class="btn" (click)="rs.key_questions![i][2] = { result: '' }; onRequestStatusChange()">Add
+                    Survey Result</button>
                 </ng-template>
               </div>
             </div>
@@ -179,7 +182,8 @@
               <ng-container *ngIf="p.article.url !== null; else addUrl">
                 <input type="text" [(ngModel)]="p.article.url" (ngModelChange)="onRequestStatusChange()"
                   placeholder="https://..." />
-                <a class="btn" *ngIf="p.article.url" [href]="p.article.url" target="_blank" rel="noopener" style="align-self: flex-start; margin-top: 8px;">Open URL</a>
+                <a class="btn" *ngIf="p.article.url" [href]="p.article.url" target="_blank" rel="noopener"
+                  style="align-self: flex-start; margin-top: 8px;">Open URL</a>
               </ng-container>
               <ng-template #addUrl>
                 <p>No URL</p>
@@ -205,10 +209,8 @@
               <summary>Problem Questions</summary>
               <div *ngIf="p.problem_questions as qs">
                 <div class="row" *ngFor="let q of qs; let j = index">
-                  <textarea class="scrollable-field"
-                    [(ngModel)]="p.problem_questions![j]"
-                    (ngModelChange)="onRequestStatusChange()"
-                    placeholder="Problem question"></textarea>
+                  <textarea class="scrollable-field" [(ngModel)]="p.problem_questions![j]"
+                    (ngModelChange)="onRequestStatusChange()" placeholder="Problem question"></textarea>
                   <button class="remove-btn" (click)="p.problem_questions!.splice(j, 1); onRequestStatusChange()"
                     title="Remove question">❌</button>
                 </div>
@@ -226,10 +228,8 @@
               <summary>Methods</summary>
               <div *ngIf="p.methods as ms">
                 <div class="row" *ngFor="let m of ms; let j = index">
-                  <textarea class="scrollable-field"
-                    [(ngModel)]="p.methods![j]"
-                    (ngModelChange)="onRequestStatusChange()"
-                    placeholder="Method"></textarea>
+                  <textarea class="scrollable-field" [(ngModel)]="p.methods![j]"
+                    (ngModelChange)="onRequestStatusChange()" placeholder="Method"></textarea>
                   <button class="remove-btn" (click)="p.methods!.splice(j, 1); onRequestStatusChange()"
                     title="Remove method">❌</button>
                 </div>
@@ -241,7 +241,7 @@
             </details>
           </div>
 
-          <button class="btn primary">
+          <button class="btn primary" (click)="addNewPaper()">
             Add Paper
           </button>
         </details>
@@ -266,11 +266,8 @@
             <div class="form-section" style="grid-column: 1 / -1;">
               <label>Content</label>
               <ng-container *ngIf="rs.draft[i].content !== null; else addContent">
-                <textarea rows="6"
-                  class="scrollable-field"
-                  [(ngModel)]="rs.draft[i].content"
-                  (ngModelChange)="onRequestStatusChange()"
-                  placeholder="Write section content here..."></textarea>
+                <textarea rows="6" class="scrollable-field" [(ngModel)]="rs.draft[i].content"
+                  (ngModelChange)="onRequestStatusChange()" placeholder="Write section content here..."></textarea>
               </ng-container>
               <ng-template #addContent>
                 <p>No content</p>

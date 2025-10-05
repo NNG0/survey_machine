@@ -3,6 +3,7 @@ import uuid
 import time
 from datetime import datetime
 
+import dotenv
 import httpx
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -90,38 +91,52 @@ mcp_settings = MCPSettings(
 
 def get_openai_settings():
     """Create OpenAI settings with a new AsyncClient for each request."""
-    is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
-    if is_in_docker:
-        # base_url = "http://host.docker.internal:11434/v1"  # The local ollama server from within docker (native is faster on some machines including mine)
-        base_url = "http://ollama-instance:11434/v1"  # The ollama server running inside docker (docker handles DNS)
-        pass
-    else:
-        base_url = "http://127.0.0.1:11434/v1"  # The ollama address when running without docker
 
-    # If the GWDG api key is found in the .env file, use that endpoint instead
-    import dotenv
+    print("Loading .env file for OpenAI settings...", flush=True)
 
     dotenv.load_dotenv()
     gwdg_api_key = os.getenv("GWDG_API_KEY")
+    base_url = os.getenv("OPENAI_URL")
+    default_model = os.getenv("DEFAULT_MODEL", "qwq-32b")
+
+    # Sets base_url to GWDG's hosted LLM API if GWDG_API_KEY is set
     if gwdg_api_key:
         base_url = "https://chat-ai.academiccloud.de/v1"
-        # default_model = "qwen3-32b"
-        default_model = "qwq-32b"
-        # "qwen3-235b-a22b" # This seems to break GWDG's VRAM. Do not use!
+        api_key = gwdg_api_key
     else:
-        # default_model = "qwen3:0.6b"
-        default_model = "llama3.2:3b"
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            # Only warn the user that the API key is being set to "ollama" automatically
+            print(
+                "Warning: OPENAI_API_KEY is not set, defaulting to 'ollama' as API key",
+                flush=True,
+            )
+
+    # Fall back to ollama if no base_url is set
+    if not base_url:
+        # Either to host.docker.internal (if in docker) or localhost (if not in docker)
+        print(
+            "Warning: OPENAI_URL is not set, defaulting to local ollama server (GWDG API key not set)",
+            flush=True,
+        )
+        is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
+        if is_in_docker:
+            base_url = "http://host.docker.internal:11434/v1"
+        else:
+            base_url = "http://127.0.0.1:11434/v1"
+
+    print(f"Using LLM provider at {base_url} with model {default_model}", flush=True)
 
     # Do a quick ping to that address to make sure it works (without "/v1")
     try:
         response = httpx.get(f"{base_url[:-3]}")
         response.raise_for_status()
     except httpx.HTTPError as e:
-        print(f"Error pinging ollama server: {e}, are you sure it is running?")
+        print(f"Error pinging LLM provider: {e}, are you sure it is running?")
 
     return OpenAISettings(
         base_url=base_url,  # The selected ollama address
-        api_key=gwdg_api_key or "ollama",
+        api_key=api_key,
         http_client=httpx.AsyncClient(timeout=200.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
         default_model=default_model,  # type: ignore
     )

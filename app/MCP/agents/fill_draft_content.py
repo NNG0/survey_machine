@@ -96,6 +96,12 @@ async def run_single_fill_draft_content_agent(
         step_info.add_warning("Agent did not return content text.")
         return status, step_info
 
+    # The content is valid, we may want to remove a double heading:
+    # The agent often likes to repeat the heading (but not always, so we can't rely on it)
+    # So if the response starts with the heading title, we remove it.
+    if response.strip().startswith(heading.title):
+        response = response.strip()[len(heading.title) :].strip()
+
     status.draft[next_idx].content = response.strip()
     return status, step_info
 

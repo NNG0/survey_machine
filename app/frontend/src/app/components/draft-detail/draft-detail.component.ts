@@ -180,6 +180,20 @@ export class DraftDetailComponent {
     }
   }
 
+  moveDraftHeadingUp(index: number): void {
+    if (index <= 0 || index >= this.project.requestStatus.draft.length) return;
+    const draft = this.project.requestStatus.draft;
+    [draft[index - 1], draft[index]] = [draft[index], draft[index - 1]];
+    this.onRequestStatusChange();
+  }
+
+  moveDraftHeadingDown(index: number): void {
+    if (index < 0 || index >= this.project.requestStatus.draft.length - 1) return;
+    const draft = this.project.requestStatus.draft;
+    [draft[index], draft[index + 1]] = [draft[index + 1], draft[index]];
+    this.onRequestStatusChange();
+  }
+
 }
 
 

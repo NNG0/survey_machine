@@ -18,7 +18,7 @@
     <div class="paper-card" *ngFor="let d of drafts">
       <div class="paper-header">
         <div class="paper-title">
-          <h3>{{ d.title }}</h3>
+          <h3 [routerLink]="['/drafts', d.id]" style="cursor: pointer;">{{ d.title }}</h3>
           <p class="meta">
             <i class="fas fa-clock"></i> Created {{ d.createdAt | date:'dd.MM.yyyy HH:mm' }} • Updated {{ d.updatedAt |
             date:'dd.MM.yyyy HH:mm' }}

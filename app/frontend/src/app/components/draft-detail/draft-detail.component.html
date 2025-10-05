@@ -57,13 +57,13 @@
         </div>
       </div>
       <div class="form-section" *ngIf="warnings.length">
-        <label>Warnings</label>
+        <label>Warnings ({{ warnings.length }})</label>
         <ul>
           <li *ngFor="let w of warnings">{{ w }}</li>
         </ul>
       </div>
       <div class="form-section" *ngIf="errors.length">
-        <label>Errors</label>
+        <label>Errors ({{ errors.length }})</label>
         <ul>
           <div style="max-height: 200px; overflow-y: auto;">
             <li *ngFor="let e of errors">{{ e }}</li>
@@ -74,7 +74,7 @@
       <fieldset [disabled]="isProcessing" class="vertical">
         <!-- Key Questions -->
         <details open>
-          <summary><strong>Key Questions</strong></summary>
+          <summary><strong>Key Questions ({{ rs.key_questions?.length || 0 }})</strong></summary>
           <div *ngIf="rs.key_questions?.length; else noKq">
             <div class="card" *ngFor="let kq of rs.key_questions; let i = index">
               <div class="draft-header">
@@ -96,7 +96,7 @@
 
               <!-- Related Papers -->
               <div class="form-section vertical" style="grid-column: 1 / -1;">
-                <label>Related Papers</label>
+                <label>Related Papers ({{ rs.key_questions![i][1]?.length || 0 }})</label>
                 <div *ngIf="rs.key_questions![i][1] as papers; else addPapersBtn">
                   <div class="paper-input-container" *ngFor="let p of papers; let j = index">
                     <input type="text" [(ngModel)]="rs.key_questions![i][1]![j]" placeholder="Paper name"
@@ -138,7 +138,7 @@
 
         <!-- Papers -->
         <details>
-          <summary><strong>Papers</strong></summary>
+          <summary><strong>Papers ({{ rs.papers.length }})</strong></summary>
           <div *ngFor="let p of rs.papers; let i = index" class="card">
             <div class="draft-header">
               <div class="draft-title">
@@ -206,7 +206,7 @@
 
             <!-- Problem Questions -->
             <details>
-              <summary>Problem Questions</summary>
+              <summary>Problem Questions ({{ p.problem_questions?.length || 0 }})</summary>
               <div *ngIf="p.problem_questions as qs">
                 <div class="row" *ngFor="let q of qs; let j = index">
                   <textarea class="scrollable-field" [(ngModel)]="p.problem_questions![j]"
@@ -225,7 +225,7 @@
 
             <!-- Methods -->
             <details>
-              <summary>Methods</summary>
+              <summary>Methods ({{ p.methods?.length || 0 }})</summary>
               <div *ngIf="p.methods as ms">
                 <div class="row" *ngFor="let m of ms; let j = index">
                   <textarea class="scrollable-field" [(ngModel)]="p.methods![j]"
@@ -248,7 +248,7 @@
 
         <!-- Draft -->
         <details>
-          <summary><strong>Draft</strong></summary>
+          <summary><strong>Draft ({{ rs.draft.length }})</strong></summary>
           <div *ngFor="let h of rs.draft; let i = index" class="card">
             <div class="draft-header">
               <div class="draft-title">
@@ -273,6 +273,11 @@
                 <p>No content</p>
                 <button class="btn" (click)="rs.draft[i].content = ''; onRequestStatusChange()">Add Content</button>
               </ng-template>
+            </div>
+            <div class="swap-buttons">
+              <button class="btn" (click)="moveDraftHeadingUp(i)" [disabled]="i === 0" title="Move up">⬆️</button>
+              <button class="btn" (click)="moveDraftHeadingDown(i)" [disabled]="i === rs.draft.length - 1"
+                title="Move down">⬇️</button>
             </div>
           </div>
           <button class="btn primary" (click)="addNewDraftHeading()">Add Heading</button>

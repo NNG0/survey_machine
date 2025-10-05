@@ -1,8 +1,8 @@
-<div class="draft-detail" *ngIf="draft; else notFound">
+<div class="draft-detail" *ngIf="project; else notFound">
   <div class="draft-card">
     <div class="draft-header">
       <div class="draft-title">
-        <h2><i class="fas fa-file-alt"></i> {{ draft.title }}</h2>
+        <h2><i class="fas fa-file-alt"></i> {{ project.title }}</h2>
         <p class="meta">
           <i class="fas fa-clock"></i>
         </p>
@@ -17,18 +17,18 @@
     <div class="form-section">
       <label for="title">Title</label>
       <input id="title" type="text" [(ngModel)]="titleEdit" />
-      <a class="btn primary" [routerLink]="['/projects', draft.id]" target="_blank" rel="noopener">
+      <a class="btn primary" [routerLink]="['/projects', project.id]" target="_blank" rel="noopener">
         <i class="fas fa-eye"></i> View
       </a>
       <a routerLink="/projects" class="btn">Back to projects</a>
     </div>
 
-    <div class="tags" *ngIf="draft.keywords?.length">
-      <span class="tag" *ngFor="let k of draft.keywords">{{ k }}</span>
+    <div class="tags" *ngIf="project.keywords?.length">
+      <span class="tag" *ngFor="let k of project.keywords">{{ k }}</span>
     </div>
 
     <!-- RequestStatus Visualization & Editor -->
-    <div class="form-section vertical" *ngIf="draft.requestStatus as rs">
+    <div class="form-section vertical" *ngIf="project.requestStatus as rs">
       <h3>Request Status</h3>
 
       <!-- Show the Research question in a textedit field, just for convenience-->
@@ -275,8 +275,7 @@
               </ng-template>
             </div>
           </div>
-          <button class="btn primary">Add
-            Heading</button>
+          <button class="btn primary" (click)="addNewDraftHeading()">Add Heading</button>
         </details>
 
         <!-- Settings -->

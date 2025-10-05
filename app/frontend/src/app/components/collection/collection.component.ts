@@ -209,8 +209,9 @@ export class CollectionComponent implements OnInit {
     }
 
     const first = trimmed[0];
-    const title = `Draft: ${first}`;
-    const draft = this.draftsService.create(title, first, trimmed.length > 1 ? trimmed.slice(1) : null);
+    const title = `Project: ${first}`;
+    const papers = this.appState.currentStep.status.papers;
+    var draft = this.draftsService.create(title, first, trimmed.length > 1 ? trimmed.slice(1) : null, papers);
     if (trimmed.length > 0) {
       // ggf. hier Logik für mehrere Fragen einfügen
     }

@@ -16,7 +16,7 @@ import { RESTAPIService } from '../../services/restapiservice.service';
   styleUrls: ['./draft-detail.component.css']
 })
 export class DraftDetailComponent {
-  draft: ProjectItem;
+  project: ProjectItem;
   titleEdit: string = '';
   private saveTimer: any;
   private readonly saveDelayMs = 500;
@@ -36,18 +36,18 @@ export class DraftDetailComponent {
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.draft = this.draftsService.getByIdOrCreate(id, 'Untitled Draft');
+      this.project = this.draftsService.getByIdOrCreate(id, 'Untitled Project');
     } else {
-      this.draft = this.draftsService.create('Untitled Draft', "", null);
+      this.project = this.draftsService.create('Untitled Project', "", null, appState.currentStep.status.papers);
     }
-    this.titleEdit = this.draft.title;
+    this.titleEdit = this.project.title;
     this.updateDraftMarkdown();
   }
 
   save(): void {
-    const updated = this.draftsService.update(this.draft.id);
+    const updated = this.draftsService.getById(this.project.id);
     if (updated) {
-      this.draft = updated;
+      this.project = updated;
     }
   }
 
@@ -72,7 +72,23 @@ export class DraftDetailComponent {
   }
 
   addNewPaper(): void {
-    this.draft.requestStatus.papers.push(this.generateBlankArticle());
+    this.project.requestStatus.papers.push(this.generateBlankArticle());
+    this.onRequestStatusChange();
+  }
+
+  addNewDraftHeading(): void {
+    const random_id1 = Math.random().toString(36).substring(2, 13);
+    const random_id2 = Math.random().toString(36).substring(2, 13);
+    const random_id = random_id1 + random_id2;
+    this.project.requestStatus.draft.push({
+      id: random_id,
+      title: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      keywords: undefined,
+      markdown: undefined,
+      content: null,
+    });
     this.onRequestStatusChange();
   }
 
@@ -80,9 +96,9 @@ export class DraftDetailComponent {
   private scheduleAutoSave() {
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
-      const updated = this.draftsService.update(this.draft.id);
+      const updated = this.draftsService.update(this.project.id, { title: this.titleEdit, requestStatus: this.project.requestStatus });
       if (updated) {
-        this.draft = updated;
+        this.project = updated;
       }
       this.updateDraftMarkdown();
     }, this.saveDelayMs);
@@ -97,10 +113,14 @@ export class DraftDetailComponent {
   getNextStepInfo(): void {
     if (this.isProcessing || this.isFetchingNext) return;
     this.isFetchingNext = true;
-    this.api.nextStep(this.draft.requestStatus).subscribe({
+    this.api.nextStep(this.project.requestStatus).subscribe({
       next: (resp) => {
-        const [message, single_call_fn_name, all_call_fn_name, stage] = resp;
-        this.nextStepInfo = { message, single_call_fn_name, all_call_fn_name, stage };
+        if (!resp) {
+          this.nextStepInfo = null;
+        } else {
+          const [message, single_call_fn_name, all_call_fn_name, stage] = resp;
+          this.nextStepInfo = { message, single_call_fn_name, all_call_fn_name, stage };
+        }
       },
       error: (err) => {
         this.errors = [String(err)];
@@ -117,13 +137,13 @@ export class DraftDetailComponent {
     this.isProcessing = true;
     this.warnings = [];
     this.errors = [];
-    this.api.runSingleNextStep(this.draft.requestStatus).subscribe({
+    this.api.runSingleNextStep(this.project.requestStatus).subscribe({
       next: ([newStatus, stepInfo]) => {
-        this.draft.requestStatus = newStatus;
+        this.project.requestStatus = newStatus;
         this.warnings = stepInfo.warnings || [];
         this.errors = stepInfo.errors || [];
-        const updated = this.draftsService.update(this.draft.id,    );
-        if (updated) this.draft = updated;
+        const updated = this.draftsService.update(this.project.id, { requestStatus: newStatus });
+        if (updated) this.project = updated;
 
         // Also update the next step info by calling nextStep again
         this.getNextStepInfo();
@@ -139,13 +159,13 @@ export class DraftDetailComponent {
   }
 
   delete(): void {
-    this.draftsService.delete(this.draft.id);
+    this.draftsService.delete(this.project.id);
     this.router.navigate(['/projects']);
   }
 
   private updateDraftMarkdown(): void {
     try {
-      const rs = this.draft.requestStatus;
+      const rs = this.project.requestStatus;
       if (!rs || !Array.isArray(rs.draft)) {
         this.draftMarkdownHtml = null;
         return;

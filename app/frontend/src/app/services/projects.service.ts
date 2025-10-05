@@ -1,5 +1,5 @@
 import { Injectable, Optional } from '@angular/core';
-import { RequestStatus, StatusSetting, SurveyResult } from '../types/models';
+import { Article, RequestStatus, StatusSetting, SurveyResult } from '../types/models';
 import { initialRequestStatus } from '../types/state';
 
 export interface ProjectItem {
@@ -41,10 +41,10 @@ export class ProjectsService {
   }
 
   getByIdOrCreate(id: string, default_title: string): ProjectItem {
-    return this.getById(id) || this.create(default_title, "", null);
+    return this.getById(id) || this.create(default_title, "", null, []);
   }
 
-  create(title: string, research_question: string, key_questions: string[] | null): ProjectItem {
+  create(title: string, research_question: string, key_questions: string[] | null, papers: Article[]): ProjectItem {
     const now = new Date().toISOString();
     const statusSettings: StatusSetting = {
       research_question,
@@ -62,7 +62,7 @@ export class ProjectsService {
     const requestStatus: RequestStatus = {
       settings: statusSettings,
       key_questions: processed_key_questions,
-      papers: [],
+      papers: papers,
       draft: [],
       
     }
@@ -82,15 +82,14 @@ export class ProjectsService {
 
   update(
     id: string,
-    //updates: Partial<Pick<DraftItem, 'title' | NewType | 'status' | 'markdown' | 'requestStatus'>>
+    updates: Partial<Pick<ProjectItem, 'title' | NewType | 'markdown' | 'requestStatus'>>
   ): ProjectItem | undefined {
     const items = this.readAll();
     const idx = items.findIndex(d => d.id === id);
     if (idx === -1) return undefined;
-    /*const updated: DraftItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+    const updated: ProjectItem = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
     items[idx] = updated;
     this.writeAll(items);
-    */
     return undefined;
   }
 

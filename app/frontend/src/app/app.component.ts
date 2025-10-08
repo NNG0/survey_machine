@@ -77,6 +77,7 @@ export class AppComponent implements OnInit {
 
   showResults = false;
   showTopics = false;
+  isLoading = false;
 
   onSearch(searchData: { query: string, filters: any }) {
     let requestStatus: RequestStatus = {
@@ -88,7 +89,8 @@ export class AppComponent implements OnInit {
     };
 
     this.showResults = true;
-    this.showTopics = true;
+    this.showTopics = false;
+    this.isLoading = true;
 
     console.log("Search query:", searchData.query);
     console.log("RequestStatus:", requestStatus);
@@ -111,9 +113,14 @@ export class AppComponent implements OnInit {
             console.warn('Failed to persist workflow status:', persistError);
           }
         });
+
+        this.isLoading = false;
+        this.showTopics = true;
       },
       error: (err) => {
         console.error("Error running step", err);
+        this.isLoading = false;
+        this.showTopics = true;
       },
     });
   }

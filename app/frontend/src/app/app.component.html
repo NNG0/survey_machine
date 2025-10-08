@@ -9,7 +9,12 @@
       <div *ngIf="router.url === '/'">
         <app-hero (search)="onSearch($event)"></app-hero>
 
-        <div class="content-section" *ngIf="showResults">
+        <div class="loading-container" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p class="loading-text">Searching for literature. This might take a while...</p>
+        </div>
+
+        <div class="content-section" *ngIf="showResults && !isLoading">
           <app-results class="content-item" [showResults]="showResults"></app-results>
           <app-topics class="content-item" [showTopics]="showTopics"></app-topics>
         </div>

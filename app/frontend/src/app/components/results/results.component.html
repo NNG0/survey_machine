@@ -1,5 +1,5 @@
 <div class="results" *ngIf="showResults">
-  @for (paper of appState.currentStep.status.papers; track paper) {
+  @for (paper of appState.currentStep.literature_search_results; track paper) {
     <app-paper-card [paper]="paper" mode="results"></app-paper-card>
   }
 </div>

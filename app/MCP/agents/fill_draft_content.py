@@ -135,7 +135,14 @@ async def run_all_fill_draft_content_agent(
             tries_at_this_index = 0
             continue
 
-        status_result, info = await run_single_fill_draft_content_agent(status)
+        agent_result = await run_single_fill_draft_content_agent(status)
+        if isinstance(agent_result, Exception):
+            step_info.add_error(
+                f"Error filling content for heading at index {index}: {agent_result}"
+            )
+            return status, step_info
+        status_result, info = agent_result
+        # status_result, info = await run_single_fill_draft_content_agent(status)
         step_info.merge(info)
 
         # If the result is successful

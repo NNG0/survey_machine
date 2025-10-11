@@ -29,6 +29,8 @@ async def run_all_create_draft_headings_agent(
         for q in status.key_questions:
             if isinstance(q, tuple) and len(q) >= 1 and isinstance(q[0], str):
                 key_questions.append(q[0])
+            else:
+                step_info.add_warning(f"Invalid key question format: {q}")
 
     key_qs_str = (
         "\n".join([f"- {q}" for q in key_questions]) if key_questions else "(none yet)"
@@ -54,7 +56,8 @@ async def run_all_create_draft_headings_agent(
     """
 
     # TODO: rework the sections the agent is told to use
-    # Also maybe give the agent the ability to read the relevant papers? That would be quite hard to do right though.
+    # Also maybe give the agent the ability to read the relevant papers?
+    # That might confuse it though, it should focus on structure here.
 
     response = await run_basic_ollama_agent(
         name="create_draft_headings",

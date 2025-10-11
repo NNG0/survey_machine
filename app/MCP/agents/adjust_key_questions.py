@@ -22,7 +22,11 @@ async def run_single_adjust_questions_agent(
         return request_status, step_info
 
     question_and_index = next(
-        ((q, i) for i, q in enumerate(request_status.key_questions) if q[1] is None),
+        (
+            (q, i)
+            for i, q in enumerate(request_status.key_questions)
+            if q[1] is None or len(q[1]) == 0
+        ),
         None,
     )
 
@@ -110,12 +114,27 @@ async def run_all_adjust_questions_agent(
 
         if question[1] is None:
             # If the question has not been assigned yet, run the adjusting agent.
-            status, info = await run_single_adjust_questions_agent(request_status)
+            agent_result = await run_single_adjust_questions_agent(request_status)
+            # status, info = await run_single_adjust_questions_agent(request_status)
+            # step_info.merge(info)
+            # if status is not None:
+            #     request_status = status
+            #     if request_status.key_questions is not None:
+            #         key_questions = request_status.key_questions
+            if isinstance(agent_result, Exception):
+                step_info.add_error(
+                    f"Failed to adjust question at index {index}: {agent_result}, trying again."
+                )
+                continue
+            status, info = agent_result
             step_info.merge(info)
             if status is not None:
                 request_status = status
-                if request_status.key_questions is not None:
-                    key_questions = request_status.key_questions
+                if (
+                    request_status.key_questions is not None
+                    and len(request_status.key_questions) > index
+                ):
+                    key_questions[index] = request_status.key_questions[index]
 
     request_status.key_questions = key_questions
     return request_status, step_info

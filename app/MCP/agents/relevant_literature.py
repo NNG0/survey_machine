@@ -25,6 +25,8 @@ async def run_relevant_literature_agent(
     Limit the number of articles to {paper_limit}.
     research question: {research_question}"""  # TODO: Add examples on how to do this, multi-shot learning is important
 
+    # Note: this currently doesn't prevent duplicates in the case that papers should be added multiple times.
+    # This however is not the recommended way of using the agent, so it's not a big issue right now.
     response = await run_basic_ollama_agent(
         name="relevant_literature_agent",
         prompt=prompt,
@@ -32,12 +34,6 @@ async def run_relevant_literature_agent(
         output_type=list[LLMArticle],
         custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
-    # if response == (True,):
-    #     return (True,)
-    # elif response == (False,):
-    #     return (False,)
-    # else:
-    #     return response
 
     step_info = StepInformation()
 
@@ -72,8 +68,10 @@ async def run_single_relevant_literature_agent(
 
     step_info = StepInformation()
 
-    # If we already have papers, we don't need to run the agent again.
-    if request_status.papers:
+    articles_to_find = request_status.settings.paper_limit - len(request_status.papers)
+
+    # If we already have enough papers, we don't need to run the agent again.
+    if articles_to_find <= 0:
         step_info.add_warning(
             "Papers already found, skipping relevant literature agent."
         )
@@ -81,7 +79,7 @@ async def run_single_relevant_literature_agent(
 
     # Run the agent to find relevant literature.
     articles, other_step_info = await run_relevant_literature_agent(
-        request_status.settings.research_question, request_status.settings.paper_limit
+        request_status.settings.research_question, articles_to_find
     )
     step_info.merge(other_step_info)
 
@@ -91,11 +89,11 @@ async def run_single_relevant_literature_agent(
         and len(articles) > 0
         and all(isinstance(article, RawArticle) for article in articles)
     ):
-        # request_status.papers = articles
-        request_status.papers = [
+        new_papers = [
             Article(article=article, methods=None, problem_questions=None)
             for article in articles
         ]
+        request_status.papers.extend(new_papers)
     elif isinstance(articles, Exception):
         step_info.add_error(f"Error finding relevant literature: {articles}")
     else:
@@ -118,6 +116,3 @@ async def run_all_relevant_literature_agent(
         "Please use run_single_relevant_literature_agent instead of run_all_relevant_literature_agent."
     )
     return request_status, step_info
-
-
-# TODO: Put test here

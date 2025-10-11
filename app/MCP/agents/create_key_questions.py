@@ -17,6 +17,15 @@ async def run_all_create_key_questions_agent(
     """Run the single create key questions agent."""
     step_info = StepInformation()
 
+    if (
+        status.key_questions
+        and len(status.key_questions) >= status.settings.num_key_questions
+    ):
+        step_info.add_warning(
+            "Requested amount of key questions already created, skipping step."
+        )
+        return status, step_info  # Key questions already created.
+
     prompt = f"""
     You are a research assistant.  
 
@@ -51,9 +60,12 @@ async def run_all_create_key_questions_agent(
     elif isinstance(key_questions, Exception):
         step_info.add_error(f"Error creating key questions: {key_questions}")
     elif key_questions:
-        status.key_questions = [
+        new_key_questions = [
             (k, None, None) for k in key_questions
         ]  # Assign None as the source paper
+        if status.key_questions is None:
+            status.key_questions = []
+        status.key_questions.extend(new_key_questions)
     else:
         print(
             "Error: The create key questions agent did not return a list of questions."

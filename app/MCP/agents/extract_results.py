@@ -10,7 +10,7 @@ async def run_single_extract_results_agent(
     """Extracts results from the papers for the next key question."""
     step_info = StepInformation()
 
-    if not request_status.key_questions:
+    if not request_status.key_questions or len(request_status.key_questions) == 0:
         step_info.add_error("No key questions to extract results from.")
         return request_status, step_info
 
@@ -100,12 +100,26 @@ async def run_all_extract_results_agent(
         if question[2] is None:
             # If the question does not yet have a result, run the single agent.
             result = await run_single_extract_results_agent(request_status)
+            # status, info = result
+            # step_info.merge(info)
+            # if status is not None:
+            #     request_status = status
+            #     if request_status.key_questions is not None:
+            #         key_questions = request_status.key_questions
+            if isinstance(result, Exception):
+                step_info.add_error(
+                    f"Failed to extract results for question: {question[0]} at index {index}: {result}, trying again."
+                )
+                continue
             status, info = result
             step_info.merge(info)
             if status is not None:
                 request_status = status
-                if request_status.key_questions is not None:
-                    key_questions = request_status.key_questions
+                if (
+                    request_status.key_questions is not None
+                    and len(request_status.key_questions) > index
+                ):
+                    key_questions[index] = request_status.key_questions[index]
 
     request_status.key_questions = key_questions
     return request_status, step_info

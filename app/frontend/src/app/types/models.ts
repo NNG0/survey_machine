@@ -84,3 +84,22 @@ export interface AppState {
   current_step: StepState;
   history: HistoryEntry[];
 }
+
+export interface OpenAlexResult {
+  id: string;
+  title: string;
+  abstract: string;
+  authors: string[];
+  published_date: string | null;
+  fcwi: number;
+  open_access: any;
+  cited_by_count: number;
+  primary_topic: string;
+  subfield: any;
+  pdf_url: string | null;
+}
+
+export interface OpenAltexResponse {
+  query: string;
+  results: OpenAlexResult[];
+}

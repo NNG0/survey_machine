@@ -8,6 +8,7 @@ import { TopicsComponent } from "./components/topics/topics.component";
 import { FooterComponent } from "./components/footer/footer.component";
 import {
   Article,
+  OpenAlexResult,
   RawArticle,
   RequestStatus,
   StepInformation,
@@ -103,16 +104,63 @@ export class AppComponent implements OnInit {
     console.log("Search filters:", searchData.filters);
 
     this.restApiService
-      .runSingleRelevantLiteratureAgent(requestStatus)
+      // .runSingleRelevantLiteratureAgent(requestStatus)
+      // .subscribe({
+      //   next: ([updatedStatus, info]) => {
+      //     console.log("Updated status: ", updatedStatus);
+      //     console.log("Info: ", info);
+
+      //     this.appState.setCurrentStep(updatedStatus, info);
+      //     this.appState.saveLiteratureSearchResults();
+      //     this.articleStore.removeAllPapers();
+
+      //     this.restApiService.createWorkflowStatus(updatedStatus).subscribe({
+      //       next: (persisted) => {
+      //         if (persisted?.workflow_id) {
+      //           this.appState.setWorkflowId(persisted.workflow_id);
+      //         }
+      //       },
+      //       error: (persistError) => {
+      //         console.warn("Failed to persist workflow status:", persistError);
+      //       },
+      //     });
+
+      //     this.isLoading = false;
+      //     this.showTopics = true;
+      //   },
+      //   error: (err) => {
+      //     console.error("Error running step", err);
+      //     this.isLoading = false;
+      //     this.showTopics = true;
+      //   },
+      // });
+      .searchOpenAlex(searchData.query)
       .subscribe({
-        next: ([updatedStatus, info]) => {
+        next: (response) => {
+          console.log("OpenAlex search results:", response);
+          // To simplify, we'll construct an updated status with the new papers. Note that optimally, the RequestStatus should not be used in this case. 
+          var updatedStatus: RequestStatus = {
+            ...requestStatus,
+            papers: response.results.map((paper: OpenAlexResult) => {
+              const raw: RawArticle = {
+                id: "OPENALEX" +paper.id,
+                title: paper.title,
+                author: (paper.authors && paper.authors.length > 0) ? paper.authors[0] : null,
+                savedAt: paper.published_date,
+                abstract: paper.abstract,
+                url: paper.pdf_url,
+                doi: null,
+              }
+              return {
+                article: raw, problem_questions: null, methods: null, relevance_score: paper.fcwi || 0
+              };
+            }),
+          }
           console.log("Updated status: ", updatedStatus);
-          console.log("Info: ", info);
-
-          this.appState.setCurrentStep(updatedStatus, info);
+          // But we don't have step info from this, so just don't change it.
+          this.appState.setCurrentStep(updatedStatus, {warnings: [], errors: []});
           this.appState.saveLiteratureSearchResults();
-          this.articleStore.removeAllPapers();
-
+          this.articleStore.removeAllPapers(); // Is this correct? It might remove all papers, as the name suggests.
           this.restApiService.createWorkflowStatus(updatedStatus).subscribe({
             next: (persisted) => {
               if (persisted?.workflow_id) {
@@ -127,8 +175,8 @@ export class AppComponent implements OnInit {
           this.isLoading = false;
           this.showTopics = true;
         },
-        error: (err) => {
-          console.error("Error running step", err);
+        error: (error) => {
+          console.error("Error searching OpenAlex:", error);
           this.isLoading = false;
           this.showTopics = true;
         },

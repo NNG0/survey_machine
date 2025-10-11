@@ -43,7 +43,15 @@ async def works():
 
 @mcp.tool()
 async def search_openalex(q: str):
-    params = {"search": q, "per_page": 5}
+    return await search_openalex_inner(q)
+
+
+# Seperating the inner function for easier reuse. Note that optimally, the backend would call the MCP tool directly.
+async def search_openalex_inner(q: str):
+    params = {
+        "search": q,
+        "per_page": 25,
+    }  # 25 is also the default. But we'll only return the five most relevant results.
 
     async with httpx.AsyncClient() as client:
         # DEBUG
@@ -77,7 +85,12 @@ async def search_openalex(q: str):
             return {"error": str(e)}
 
         # DEBUG
-        logger.info(f"Relevant Data: {relevant_data}")
+        logger.debug(f"Relevant Data: {relevant_data}")
+
+        # We don't return all results, only the top 5 most relevant ones. We'll use fwci for that.
+        relevant_data.sort(key=lambda x: x.get("fwci", -1), reverse=True)
+        relevant_data = relevant_data[:5]
+
         return {"query": q, "results": relevant_data}
 
 

@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { RequestStages, RequestStatus, StepInformation } from "../types/models";
+import { OpenAltexResponse, RequestStages, RequestStatus, StepInformation } from "../types/models";
 
 @Injectable({
   providedIn: "root",
@@ -70,4 +70,10 @@ export class RESTAPIService {
       getLatestWorkflowStatus(): Observable<any> {
         return this.http.get(`${this.baseUrl}/workflow_results/latest`);
       }
+
+  searchOpenAlex(query: string): Observable<OpenAltexResponse> {
+    return this.http.get<OpenAltexResponse>(
+      `${this.baseUrl}/search_openalex?q=${encodeURIComponent(query)}`,
+    );
+  }
 }

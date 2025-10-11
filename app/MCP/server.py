@@ -28,6 +28,8 @@ from .types import (
     StepInformation,
 )
 
+from .literature_access.main import search_openalex_inner
+
 from mcp_agent.app import MCPApp
 from mcp_agent.config import (
     LoggerSettings,
@@ -432,6 +434,16 @@ async def run_all_parse_papers(
         )
         request_status, step_info = await run_all_parse_papers_agent(request_status)
         return request_status, step_info
+
+
+# === OpenAlex Literature Access ===
+
+
+# For access to the OpenAlex API, we use the same function the MCP server uses.
+@app.get("/search_openalex")
+async def search_openalex(q: str):
+    """Searches OpenAlex for the given query."""
+    return await search_openalex_inner(q)
 
 
 # === WORKFLOW RESULTS STORAGE ===

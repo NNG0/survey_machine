@@ -215,7 +215,6 @@ async def run_single_step(
             f"Running single next step for request: {request_status.settings.research_question}"
         )
         request_status, step_info = await run_single_next_step(request_status)
-        await recompute_relevance_scores(request_status)
         return request_status, step_info
 
 
@@ -250,7 +249,6 @@ async def run_single_stage_endpoint(
             f"Running single stage for request: {request_status.settings.research_question}"
         )
         request_status, step_info = await run_single_stage(request_status)
-        await recompute_relevance_scores(request_status)
         return request_status, step_info
 
 
@@ -267,7 +265,6 @@ async def run_until_before_stage_endpoint(
             f"Running until before stage {stage} for request: {request_status.settings.research_question}"
         )
         request_status, step_info = await run_until_before_stage(request_status, stage)
-        await recompute_relevance_scores(request_status)
         return request_status, step_info
 
 

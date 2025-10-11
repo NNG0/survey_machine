@@ -1,38 +1,47 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { PapersService, PaperCreate } from '../../services/papers.service';
-import { Router } from '@angular/router';
-import { ProjectsService } from '../../services/projects.service';
-import { FormsModule } from '@angular/forms';
-import { AppStateService } from '../../services/state/app-state.service';
-import { ArticleStore } from '../../services/state/article.store';
-import { PaperCardComponent } from '../paper-card/paper-card.component';
-import { RESTAPIService } from '../../services/restapiservice.service';
-import { Article, RequestStages, StepInformation } from '../../types/models';
+import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { PapersService, PaperCreate } from "../../services/papers.service";
+import { Router } from "@angular/router";
+import { ProjectsService } from "../../services/projects.service";
+import { FormsModule } from "@angular/forms";
+import { AppStateService } from "../../services/state/app-state.service";
+import { ArticleStore } from "../../services/state/article.store";
+import { PaperCardComponent } from "../paper-card/paper-card.component";
+import { RESTAPIService } from "../../services/restapiservice.service";
+import { Article, RequestStages, StepInformation } from "../../types/models";
 
 @Component({
-  selector: 'app-collection',
+  selector: "app-collection",
   standalone: true,
   imports: [CommonModule, FormsModule, PaperCardComponent],
-  templateUrl: './collection.component.html',
-  styleUrls: ['./collection.component.css'],
+  templateUrl: "./collection.component.html",
+  styleUrls: ["./collection.component.css"],
 })
 export class CollectionComponent implements OnInit {
   showDraftModal = false;
   showRQModal = false;
   uploadedFile: File | null = null;
-  researchQuestions: string[] = [''];
+  researchQuestions: string[] = [""];
 
-  constructor(private papersService: PapersService, private draftsService: ProjectsService, private router: Router, public appState: AppStateService, private articleStore: ArticleStore, private restApi: RESTAPIService) { }
+  constructor(
+    private papersService: PapersService,
+    private draftsService: ProjectsService,
+    private router: Router,
+    public appState: AppStateService,
+    private articleStore: ArticleStore,
+    private restApi: RESTAPIService,
+  ) {}
 
   ngOnInit() {
+    this.articleStore.removeAllPapers();
     this.articleStore.replaceArticlesWithSaved();
   }
 
   removePaper(article: Article) {
-    const id = article?.article?.id ?? article?.article?.url ?? article?.article?.title;
+    const id =
+      article?.article?.id ?? article?.article?.url ?? article?.article?.title;
     if (!id) {
-      console.warn('Cannot remove paper without identifier', article);
+      console.warn("Cannot remove paper without identifier", article);
       return;
     }
 
@@ -41,31 +50,32 @@ export class CollectionComponent implements OnInit {
 
   removeAllPapers() {
     const confirmed = confirm(
-      'Delete all papers from your collection? This cannot be undone.'
+      "Delete all papers from your collection? This cannot be undone.",
     );
     if (!confirmed) return;
-    this.appState.removeAllPapers();
+    this.articleStore.removeAllPapers();
   }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file || file.type !== 'application/pdf') {
-      console.error('No PDF file selected');
+    if (!file || file.type !== "application/pdf") {
+      console.error("No PDF file selected");
       return;
     }
 
     // Check if research question exists
-    const currentRQ = this.appState.currentStep.status.settings.research_question?.trim();
-    console.log('Current research question:', currentRQ);
-    console.log('Will show popup:', !currentRQ);
+    const currentRQ =
+      this.appState.currentStep.status.settings.research_question?.trim();
+    console.log("Current research question:", currentRQ);
+    console.log("Will show popup:", !currentRQ);
 
     if (!currentRQ) {
       this.uploadedFile = file;
-      this.researchQuestions = ['']; // Reset research questions
+      this.researchQuestions = [""]; // Reset research questions
       this.showRQModal = true;
-      console.log('Showing RQ modal');
+      console.log("Showing RQ modal");
       return;
     }
 
@@ -73,14 +83,14 @@ export class CollectionComponent implements OnInit {
   }
 
   private performUpload(file: File, input?: HTMLInputElement) {
-    console.log('Uploading PDF:', file.name);
+    console.log("Uploading PDF:", file.name);
 
     const status = structuredClone(this.appState.currentStep.status);
     const workflowId = this.appState.currentWorkflowId;
 
     this.restApi.uploadForWorkflow(file, status, workflowId).subscribe({
       next: (response) => {
-        console.log('Upload response:', response);
+        console.log("Upload response:", response);
 
         if (response.request_status) {
           const stepInfo: StepInformation = {
@@ -88,22 +98,28 @@ export class CollectionComponent implements OnInit {
             errors: [],
           };
 
-          const stage = response.workflow_finished ? RequestStages.FINISHED : undefined;
-          this.appState.hydrateFromBackend(response.request_status, stepInfo, stage);
+          const stage = response.workflow_finished
+            ? RequestStages.FINISHED
+            : undefined;
+          this.appState.hydrateFromBackend(
+            response.request_status,
+            stepInfo,
+            stage,
+          );
         }
 
         if (response.workflow_id) {
           this.appState.setWorkflowId(response.workflow_id);
         }
 
-        alert('PDF erfolgreich hochgeladen! Relevance Score wird berechnet...');
+        alert("PDF erfolgreich hochgeladen! Relevance Score wird berechnet...");
       },
       error: (err) => {
-        console.error('Upload failed:', err);
-        alert('Upload fehlgeschlagen: ' + (err.error?.detail || err.message));
+        console.error("Upload failed:", err);
+        alert("Upload fehlgeschlagen: " + (err.error?.detail || err.message));
       },
       complete: () => {
-        if (input) input.value = ''; // Reset file input
+        if (input) input.value = ""; // Reset file input
       },
     });
 
@@ -145,13 +161,13 @@ export class CollectionComponent implements OnInit {
   startDrafting() {
     this.showDraftModal = true;
     if (!this.researchQuestions || this.researchQuestions.length === 0) {
-      this.researchQuestions = [''];
+      this.researchQuestions = [""];
     }
   }
 
   addResearchQuestion() {
     if (this.researchQuestions.length < 5) {
-      this.researchQuestions.push('');
+      this.researchQuestions.push("");
     }
   }
 
@@ -173,12 +189,12 @@ export class CollectionComponent implements OnInit {
   submitRQAndUpload() {
     const rq = this.researchQuestions[0]?.trim();
     if (!rq || !this.uploadedFile) {
-      alert('Please enter a research question.');
+      alert("Please enter a research question.");
       return;
     }
 
     // Update AppState with research question
-    this.appState.state.update(prev => ({
+    this.appState.state.update((prev) => ({
       ...prev,
       current_step: {
         ...prev.current_step,
@@ -186,10 +202,10 @@ export class CollectionComponent implements OnInit {
           ...prev.current_step.status,
           settings: {
             ...prev.current_step.status.settings,
-            research_question: rq
-          }
-        }
-      }
+            research_question: rq,
+          },
+        },
+      },
     }));
 
     // Now perform the upload
@@ -200,11 +216,11 @@ export class CollectionComponent implements OnInit {
 
   submitDraft() {
     const trimmed = this.researchQuestions
-      .map((q) => (q || '').trim())
+      .map((q) => (q || "").trim())
       .filter((q) => q.length > 0);
 
     if (trimmed.length === 0) {
-      alert('Please provide at least one research question.');
+      alert("Please provide at least one research question.");
       return;
     }
 
@@ -217,7 +233,7 @@ export class CollectionComponent implements OnInit {
     }
 
     this.showDraftModal = false;
-    this.router.navigate(['/projects', draft.id]);
+    this.router.navigate(["/projects", draft.id]);
   }
 
   trackByIndex(index: number): number {

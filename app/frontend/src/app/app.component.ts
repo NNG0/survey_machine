@@ -6,7 +6,12 @@ import { HeroComponent } from "./components/hero/hero.component";
 import { ResultsComponent } from "./components/results/results.component";
 import { TopicsComponent } from "./components/topics/topics.component";
 import { FooterComponent } from "./components/footer/footer.component";
-import { Article, RawArticle, RequestStatus, StepInformation } from "./types/models";
+import {
+  Article,
+  RawArticle,
+  RequestStatus,
+  StepInformation,
+} from "./types/models";
 import { initialRequestStatus } from "./types/state";
 import { AppStateService } from "./services/state/app-state.service";
 import { PapersService } from "./services/papers.service";
@@ -35,7 +40,7 @@ export class AppComponent implements OnInit {
     public router: Router,
     private papersService: PapersService,
     private articleStore: ArticleStore,
-  ) { }
+  ) {}
   ngOnInit(): void {
     this.restApiService.getLatestWorkflowStatus().subscribe({
       next: (response) => {
@@ -50,18 +55,19 @@ export class AppComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.warn('Failed to restore latest workflow status:', error);
-      }
+        console.warn("Failed to restore latest workflow status:", error);
+      },
     });
 
     this.papersService.getAllPapers().subscribe({
       next: (papers: any[]) => {
         papers
-          .map(p => this.mapLegacyPaper(p))
-          .forEach(mapped => {
-            const exists = this.appState.currentStep.status.papers.some(existing =>
-              existing.article.id === mapped.article.id ||
-              existing.article.url === mapped.article.url
+          .map((p) => this.mapLegacyPaper(p))
+          .forEach((mapped) => {
+            const exists = this.appState.currentStep.status.papers.some(
+              (existing) =>
+                existing.article.id === mapped.article.id ||
+                existing.article.url === mapped.article.url,
             );
 
             if (!exists) {
@@ -70,15 +76,16 @@ export class AppComponent implements OnInit {
           });
       },
       error: (error) => {
-        console.error('Error loading papers:', error);
-      }
+        console.error("Error loading papers:", error);
+      },
     });
   }
 
   showResults = false;
   showTopics = false;
+  isLoading = false;
 
-  onSearch(searchData: { query: string, filters: any }) {
+  onSearch(searchData: { query: string; filters: any }) {
     let requestStatus: RequestStatus = {
       ...initialRequestStatus,
       settings: {
@@ -88,34 +95,44 @@ export class AppComponent implements OnInit {
     };
 
     this.showResults = true;
-    this.showTopics = true;
+    this.showTopics = false;
+    this.isLoading = true;
 
     console.log("Search query:", searchData.query);
     console.log("RequestStatus:", requestStatus);
     console.log("Search filters:", searchData.filters);
 
-    this.restApiService.runSingleRelevantLiteratureAgent(requestStatus).subscribe({
-      next: ([updatedStatus, info]) => {
-        console.log("Updated status: ", updatedStatus);
-        console.log("Info: ", info);
+    this.restApiService
+      .runSingleRelevantLiteratureAgent(requestStatus)
+      .subscribe({
+        next: ([updatedStatus, info]) => {
+          console.log("Updated status: ", updatedStatus);
+          console.log("Info: ", info);
 
-        this.appState.setCurrentStep(updatedStatus, info);
+          this.appState.setCurrentStep(updatedStatus, info);
+          this.appState.saveLiteratureSearchResults();
+          this.articleStore.removeAllPapers();
 
-        this.restApiService.createWorkflowStatus(updatedStatus).subscribe({
-          next: (persisted) => {
-            if (persisted?.workflow_id) {
-              this.appState.setWorkflowId(persisted.workflow_id);
-            }
-          },
-          error: (persistError) => {
-            console.warn('Failed to persist workflow status:', persistError);
-          }
-        });
-      },
-      error: (err) => {
-        console.error("Error running step", err);
-      },
-    });
+          this.restApiService.createWorkflowStatus(updatedStatus).subscribe({
+            next: (persisted) => {
+              if (persisted?.workflow_id) {
+                this.appState.setWorkflowId(persisted.workflow_id);
+              }
+            },
+            error: (persistError) => {
+              console.warn("Failed to persist workflow status:", persistError);
+            },
+          });
+
+          this.isLoading = false;
+          this.showTopics = true;
+        },
+        error: (err) => {
+          console.error("Error running step", err);
+          this.isLoading = false;
+          this.showTopics = true;
+        },
+      });
   }
 
   private mapLegacyPaper(paper: any): Article {

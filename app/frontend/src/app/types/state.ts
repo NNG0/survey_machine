@@ -51,14 +51,15 @@ export const orderedRequestStages: RequestStages[] = [
   RequestStages.EXTRACT_RELEVANT_RESULTS_FROM_PAPERS,
   RequestStages.CREATING_DRAFT_HEADINGS,
   RequestStages.FILLING_DRAFT_CONTENT,
-  RequestStages.FINISHED
-]
+  RequestStages.FINISHED,
+];
 
 const initialStepState: StepState = {
-    status: initialRequestStatus,
-    step_information: initialStepInformation,
-    stage: orderedRequestStages[0],
-    saved_papers: []
+  status: initialRequestStatus,
+  step_information: initialStepInformation,
+  stage: orderedRequestStages[0],
+  saved_papers: [],
+  literature_search_results: [],
 };
 
 export const initialAppState: AppState = {

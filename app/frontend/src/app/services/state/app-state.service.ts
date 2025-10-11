@@ -14,29 +14,30 @@ import { ArticleStore } from "./article.store";
   providedIn: "root",
 })
 export class AppStateService {
-  constructor(
-  ) { }
+  constructor() {}
   state = signal<AppState>(initialAppState);
 
   private getNextStage(currentStage: RequestStages): RequestStages {
-    const currentIndex = orderedRequestStages.indexOf(currentStage)
+    const currentIndex = orderedRequestStages.indexOf(currentStage);
 
-    return currentIndex >= orderedRequestStages.length - 1 ?
-      currentStage : orderedRequestStages[currentIndex + 1]
+    return currentIndex >= orderedRequestStages.length - 1
+      ? currentStage
+      : orderedRequestStages[currentIndex + 1];
   }
 
   private getPrevStage(currentStage: RequestStages): RequestStages {
-    const currentIndex = orderedRequestStages.indexOf(currentStage)
+    const currentIndex = orderedRequestStages.indexOf(currentStage);
 
-    return currentIndex <= 0 ?
-      currentStage : orderedRequestStages[currentIndex - 1]
+    return currentIndex <= 0
+      ? currentStage
+      : orderedRequestStages[currentIndex - 1];
   }
 
   setCurrentStep(
     requestStatus: RequestStatus,
     stepInformation: StepInformation,
   ) {
-    this.state.update(prev => {
+    this.state.update((prev) => {
       const newHistoryEntry: HistoryEntry = {
         id: prev.history.length + 1,
         state: prev.current_step,
@@ -51,7 +52,7 @@ export class AppStateService {
           step_information: stepInformation,
         },
         history: [...prev.history, newHistoryEntry],
-      }
+      };
     });
   }
 
@@ -60,7 +61,7 @@ export class AppStateService {
     stepInformation: StepInformation | undefined,
     stageOverride?: RequestStages,
   ) {
-    this.state.update(prev => ({
+    this.state.update((prev) => ({
       ...prev,
       current_step: {
         ...prev.current_step,
@@ -78,7 +79,7 @@ export class AppStateService {
   }
 
   replaceArticlesAndRemoveSaved() {
-    this.state.update(prev => {
+    this.state.update((prev) => {
       return {
         ...prev,
         current_step: {
@@ -86,23 +87,23 @@ export class AppStateService {
           saved_papers: [],
           status: {
             ...prev.current_step.status,
-            papers: [...prev.current_step.saved_papers]
-          }
-        }
-      }
-    })
+            papers: [...prev.current_step.saved_papers],
+          },
+        },
+      };
+    });
   }
 
-  removeAllPapers() {
-    this.state.update(prev => {
+  saveLiteratureSearchResults() {
+    this.state.update((step) => {
       return {
-        ...prev,
+        ...step,
         current_step: {
-          ...prev.current_step,
-          saved_papers: []
-        }
-      }
-    })
+          ...this.currentStep,
+          literature_search_results: step.current_step.status.papers,
+        },
+      };
+    });
   }
 
   get currentStep(): StepState {

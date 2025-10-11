@@ -1,9 +1,9 @@
 .card {
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   background: #fff;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   margin-bottom: 20px;
 }
 
@@ -18,7 +18,8 @@
   background-color: #eef0ff;
   color: #3f51b5;
   padding: 8px 14px;
-  border-radius: 999px; font-size: 0.85em;
+  border-radius: 999px;
+  font-size: 0.85em;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -72,7 +73,9 @@
   font-weight: 500;
   font-size: 0.9em;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -94,19 +97,17 @@
   background-color: #b71c1c;
 }
 
-.remove-all-btn {
+.remove-btn {
   background: #ffe6e6;
   color: #d32f2f;
+  margin-left: 12px;
   border: none;
-  padding: 8px 12px;
+  padding: 8px;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  align-self: flex-end;
 }
 
-.remove-all-btn:hover {
+.remove-btn:hover {
   background: #ffcccc;
 }
-
-

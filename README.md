@@ -34,6 +34,29 @@ Then, because the ollama container is not by default enabled, ollama needs to be
 
 The default ollama model is currently `qwen3:4b` and is defined in the `main.py` where the OpenAI settings are set up.
 
+### 🔧 GROBID Setup (External Service)
+
+Our project uses [**GROBID**](https://github.com/kermitt2/grobid) for PDF parsing.  
+GROBID is an external Java-based service that must be running before the application can process PDFs.
+
+**Option 1:** Run GROBID with Docker  
+```bash
+docker run -t --rm -p 8070:8070 lfoppiano/grobid:latest
+```
+
+**Option 2:** Run it locally from source  
+Follow the setup guide in the [GROBID GitHub repository](https://github.com/kermitt2/grobid#installing-and-running).
+
+Make sure the GROBID service is available at `http://localhost:8070` before starting the app.
+
+### Relevance Scoring with SciBERT
+
+For computing the relevance score of research papers, we use SciBERT, a transformer model trained on scientific text.
+This approach is independent of database providers and therefore works both for literature retrieved via APIs (e.g., OpenAlex) and for locally uploaded PDFs.
+Each paper’s title and abstract are compared to the current research question to assess its relevance.
+
+The model runs locally (CPU) by default and does not require external API keys, ensuring consistent scoring across environments.
+
 ### Test run of MCP
 
 A test run of the MCP functionality can be done by running `uv run -m MCP.main test`.

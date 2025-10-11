@@ -24,10 +24,10 @@ async def run_all_create_draft_headings_agent(
 
     # This agent effectively needs access to the entire state to run well, so we format the status in a nice way for it.
 
-    key_questions = []
-    if status.key_questions and isinstance(status.key_questions, list):
+    key_questions: list[str] = []
+    if status.key_questions:
         for q in status.key_questions:
-            if isinstance(q, tuple) and len(q) >= 1 and isinstance(q[0], str):
+            if len(q) >= 1:
                 key_questions.append(q[0])
             else:
                 step_info.add_warning(f"Invalid key question format: {q}")
@@ -72,15 +72,8 @@ async def run_all_create_draft_headings_agent(
     elif response == (False,):
         step_info.add_error("Failed to create draft headings due to an unknown error.")
         return status, step_info
-    elif isinstance(response, Exception):
-        step_info.add_error(f"Error creating draft headings: {response}")
-        return status, step_info
 
-    if (
-        response is None
-        or not isinstance(response, list)
-        or not all(isinstance(h, str) for h in response)
-    ):
+    if not isinstance(response, list):
         step_info.add_error("Agent did not return a valid list of str.")
         return status, step_info
 

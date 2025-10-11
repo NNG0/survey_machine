@@ -57,8 +57,6 @@ async def run_all_create_key_questions_agent(
             step_info.add_error(
                 "Failed to create key questions due to an unknown error."
             )
-    elif isinstance(key_questions, Exception):
-        step_info.add_error(f"Error creating key questions: {key_questions}")
     elif key_questions:
         new_key_questions = [
             (k, None, None) for k in key_questions

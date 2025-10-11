@@ -56,7 +56,7 @@ async def run_single_adjust_questions_agent(
         server_list=["literature_access", "fetch"],
     )
 
-    if response is not None and isinstance(response, list) and len(response) > 0:
+    if isinstance(response, list) and len(response) > 0:
         question = (question[0], response, question[2])
         request_status.key_questions[question_index] = question
     elif isinstance(response, Exception):
@@ -121,20 +121,23 @@ async def run_all_adjust_questions_agent(
             #     request_status = status
             #     if request_status.key_questions is not None:
             #         key_questions = request_status.key_questions
-            if isinstance(agent_result, Exception):
-                step_info.add_error(
-                    f"Failed to adjust question at index {index}: {agent_result}, trying again."
+
+            if agent_result == request_status:
+                # Nothing changed, we can stop here.
+                step_info.add_warning(
+                    f"Failed to adjust question at index {index}. Trying again."
                 )
                 continue
+
             status, info = agent_result
             step_info.merge(info)
-            if status is not None:
-                request_status = status
-                if (
-                    request_status.key_questions is not None
-                    and len(request_status.key_questions) > index
-                ):
-                    key_questions[index] = request_status.key_questions[index]
+
+            request_status = status
+            if (
+                request_status.key_questions is not None
+                and len(request_status.key_questions) > index
+            ):
+                key_questions[index] = request_status.key_questions[index]
 
     request_status.key_questions = key_questions
     return request_status, step_info

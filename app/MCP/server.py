@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import uuid
 import time
 from datetime import datetime
@@ -438,7 +439,7 @@ async def run_all_parse_papers(
 
 
 @app.post("/workflow_results")
-async def create_workflow_result(request_status: RequestStatus):
+async def create_workflow_result(request_status: RequestStatus) -> dict[str, Any]:
     """Persist a new workflow request status"""
     try:
         await recompute_relevance_scores(request_status)
@@ -475,7 +476,7 @@ async def get_workflow_results():
 
 
 @app.get("/workflow_results/latest")
-async def get_latest_workflow_result():
+async def get_latest_workflow_result() -> dict[str, Any]:
     try:
         paper_manager = PaperManager()
         result = paper_manager.get_latest_workflow_result()
@@ -491,7 +492,9 @@ async def get_latest_workflow_result():
 
 
 @app.put("/workflow_results/{workflow_id}")
-async def update_workflow_result(workflow_id: str, request_status: RequestStatus):
+async def update_workflow_result(
+    workflow_id: str, request_status: RequestStatus
+) -> dict[str, Any]:
     try:
         await recompute_relevance_scores(request_status)
         paper_manager = PaperManager()
@@ -542,7 +545,7 @@ async def add_paper(
     abstract: str = "",
     url: str = "",
     year: int | None = None,
-):
+) -> dict[str, bool | int]:
     try:
         paper_manager = PaperManager()
         paper_id = paper_manager.add_paper(
@@ -610,8 +613,6 @@ async def upload_for_workflow(
             methods=None,
         )
 
-        if request_status.papers is None:
-            request_status.papers = []
         request_status.papers.append(article)
 
         # Run complete MCP workflow for PDF (skip all Literature stages)

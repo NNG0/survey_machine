@@ -86,11 +86,6 @@ async def run_single_fill_draft_content_agent(
             f"Failed to fill content for heading '{heading.title}' due to an unknown error."
         )
         return status, step_info
-    elif isinstance(response, Exception):
-        step_info.add_error(
-            f"Error filling content for heading '{heading.title}': {response}"
-        )
-        return status, step_info
 
     if not isinstance(response, str) or not response.strip():
         step_info.add_warning("Agent did not return content text.")
@@ -136,21 +131,23 @@ async def run_all_fill_draft_content_agent(
             continue
 
         agent_result = await run_single_fill_draft_content_agent(status)
-        if isinstance(agent_result, Exception):
-            step_info.add_error(
-                f"Error filling content for heading at index {index}: {agent_result}"
+
+        if agent_result == status:
+            # Nothing changed, we can stop here.
+            step_info.add_warning(
+                f"Failed to fill content for heading at index {index}. Trying again."
             )
-            return status, step_info
+            continue
+
         status_result, info = agent_result
         # status_result, info = await run_single_fill_draft_content_agent(status)
         step_info.merge(info)
 
         # If the result is successful
-        if status_result is not None:
-            status = status_result
-            if status_result.draft[index].content is not None:
-                index += 1
-                tries_at_this_index = 0
+        status = status_result
+        if status_result.draft[index].content is not None:
+            index += 1
+            tries_at_this_index = 0
 
     return status, step_info
 

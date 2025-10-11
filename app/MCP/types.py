@@ -1,9 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import Self
+from typing import Any, Self
 from random import random
-
-from mcp_agent.workflows.llm.augmented_llm import AugmentedLLM
 
 from pydantic import BaseModel, Field
 
@@ -72,7 +70,9 @@ class DraftHeading(BaseModel):
     content: str | None  # The content of the heading, in markdown format.
 
 
-type KeyQuestion = tuple[str, list[str] | None, SurveyResult | None]
+type KeyQuestion = tuple[
+    str, list[str] | None, SurveyResult | None
+]  # (question, list of source URLs, result)
 
 
 class RequestStatus(BaseModel):
@@ -81,24 +81,22 @@ class RequestStatus(BaseModel):
     It can also be stored and loaded due to this."""
 
     key_questions: list[KeyQuestion] | None = Field(
-        default_factory=list
+        default_factory=list[KeyQuestion]
     )  # Each question may or may not be assigned a url to one or more papers.
 
-    papers: list[Article] = Field(default_factory=list)  # The list of papers
+    papers: list[Article] = Field(default_factory=list[Article])  # The list of papers
 
     draft: list[DraftHeading] = Field(
-        default_factory=list
+        default_factory=list[DraftHeading]
     )  # The draft headings for the final document
 
     settings: StatusSetting  # The settings for the request, such as the research question and paper limit.
     # Does not change over the lifetime of the request.
 
-    # The tracefile isn't used anymore. Instead, the history is stored in a database outside of the MCP module.
-
     def __init__(
         self,
         key_questions: list[tuple[str, list[str] | None, SurveyResult | None]]
-        | None = Field(default_factory=list),  # TODO: is this right?
+        | None = Field(default_factory=list),
         papers: list[Article] = Field(default_factory=list),
         draft: list[DraftHeading] = Field(default_factory=list),
         settings: StatusSetting | None = None,
@@ -131,7 +129,7 @@ Request status:
             """
         )  # TODO: Add a better pretty print function
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Returns the status as a dictionary."""
         # return self.__dict__ # This only bubbles up the JSON serialization problem.
         return self.model_dump()
@@ -196,46 +194,3 @@ class RequestStages(Enum):
     CREATING_DRAFT_HEADINGS = 600
     FILLING_DRAFT_CONTENT = 700
     FINISHED = 999
-
-
-class SupportedProviders(object):
-    """An abstract class to express the different providers and models that are supported by the backend."""
-
-    # The library only needs a single function, which gives back an object representing the provider.
-    def get_provider(self, agent=None) -> AugmentedLLM:
-        """Returns an object representing the provider."""
-        raise NotImplementedError("This method should be implemented by the subclass.")
-
-
-class Ollama(SupportedProviders):
-    """A class that represents the Ollama provider. Can specify a custom model."""
-
-    model: str = "qwen3"  # Default model to use if none is specified.
-
-    def __init__(self, model: str = "qwen"):
-        """Initializes the Ollama provider with a specific model."""
-        self.model = model
-
-    def get_provider(self, agent=None) -> AugmentedLLM:
-        """Returns an Ollama provider with the specified model."""
-        from mcp_agent.workflows.llm.augmented_llm_ollama import OllamaAugmentedLLM
-
-        if agent:
-            # If an agent is provided, pass it to the OllamaAugmentedLLM
-            return OllamaAugmentedLLM(default_model=self.model, agent=agent)
-        return OllamaAugmentedLLM(default_model=self.model)
-
-
-class OpenRouter(SupportedProviders):
-    """A class that represents the OpenRouter provider. It uses the OpenAI Provider, so the API key in the secrets file needs to be set on the OpenAI provider."""
-
-    def get_provider(self, agent=None) -> AugmentedLLM:
-        """Returns an OpenRouter provider."""
-        from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
-
-        if agent:
-            # If an agent is provided, pass it to the OpenAIAugmentedLLM
-            return OpenAIAugmentedLLM(
-                agent=agent, base_url="https://api.openrouter.ai/v1"
-            )
-        return OpenAIAugmentedLLM()

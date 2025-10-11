@@ -47,13 +47,9 @@ async def run_single_extract_results_agent(
         step_info.add_error(
             f"Failed to extract result for question at index {question_index} due to an unknown error."
         )
-    elif response is not None and isinstance(response, SurveyResult):
+    elif isinstance(response, SurveyResult):
         question = (question[0], question[1], response)
         request_status.key_questions[question_index] = question
-    elif isinstance(response, Exception):
-        step_info.add_error(
-            f"Failed to extract result for question at index {question_index}: {response}"
-        )
     else:
         step_info.add_warning("Failed to extract result.")
 
@@ -106,20 +102,23 @@ async def run_all_extract_results_agent(
             #     request_status = status
             #     if request_status.key_questions is not None:
             #         key_questions = request_status.key_questions
-            if isinstance(result, Exception):
-                step_info.add_error(
-                    f"Failed to extract results for question: {question[0]} at index {index}: {result}, trying again."
+
+            if result == request_status:
+                # Nothing changed, we can stop here.
+                step_info.add_warning(
+                    f"Failed to extract results for question at index {index}. Trying again."
                 )
                 continue
+
             status, info = result
             step_info.merge(info)
-            if status is not None:
-                request_status = status
-                if (
-                    request_status.key_questions is not None
-                    and len(request_status.key_questions) > index
-                ):
-                    key_questions[index] = request_status.key_questions[index]
+
+            request_status = status
+            if (
+                request_status.key_questions is not None
+                and len(request_status.key_questions) > index
+            ):
+                key_questions[index] = request_status.key_questions[index]
 
     request_status.key_questions = key_questions
     return request_status, step_info

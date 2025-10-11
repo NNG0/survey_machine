@@ -70,7 +70,7 @@ async def run_single_parse_papers_agent(
         paper_to_parse.problem_questions = []
         paper_to_parse.methods = []
         request_status.papers[paper_index] = paper_to_parse
-    elif response is not None and isinstance(response, ParsedPaper):
+    elif isinstance(response, ParsedPaper):
         # If the problem questions were not empty, we emit a warning and append the new information.
         # Note that in the next_step workflow, this will almost not happen, but because it doesn't need to be used,
         # we should have a well-defined and useful behavior for the fallback case.
@@ -154,23 +154,16 @@ async def run_all_parse_papers_agent(
             # step_info.add_warning(f"Failed to parse paper at index {index}.")
             # if status is not None:
             #     request_status = status
-            if agent_result is None:
-                step_info.add_warning(
-                    f"Failed to parse paper at index {index} due to an unknown error."
+
+            request_status, info = agent_result
+            step_info.merge(info)
+            if agent_result == request_status:
+                # This means that the agent failed due to rate limiting or an unknown error.
+                # We will retry the same index.
+                print(
+                    f"Retrying paper at index {index} due to agent failure (Nothing changed)."
                 )
                 continue
-            elif isinstance(agent_result, tuple) and len(agent_result) == 2:
-                request_status, info = agent_result
-                step_info.merge(info)
-            elif isinstance(agent_result, Exception):
-                step_info.add_warning(
-                    f"Failed to parse paper at index {index} due to an exception: {agent_result}. Trying again."
-                )
-                continue
-            else:
-                step_info.add_warning(
-                    f"Failed to parse paper at index {index} due to an unknown error. Trying again."
-                )
-                continue
+        index += 1
 
     return request_status, step_info

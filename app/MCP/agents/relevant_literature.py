@@ -6,7 +6,6 @@ from ..types import (
     RawArticle,
     RequestStatus,
     StepInformation,
-    OpenRouter,
     convert_llm_article_to_raw_article,
 )
 
@@ -32,24 +31,17 @@ async def run_relevant_literature_agent(
         prompt=prompt,
         server_list=["literature_access", "fetch"],
         output_type=list[LLMArticle],
-        custom_provider=OpenRouter(),  # Use the OpenRouter for better performance, at the cost of one of the 50 tokens we get daily.
     )
 
     step_info = StepInformation()
 
-    if response is None:
-        step_info.add_error("No response from relevant literature agent.")
-    elif isinstance(response, Exception):
-        step_info.add_error(f"Error from relevant literature agent: {response}")
-    elif response == (True,):
+    if response == (True,):
         step_info.add_error("Rate limit exceeded while fetching relevant literature.")
     elif response == (False,):
         step_info.add_error(
             "Failed to fetch relevant literature due to an unknown error."
         )
-    elif isinstance(response, list) and all(
-        isinstance(article, LLMArticle) for article in response
-    ):
+    elif isinstance(response, list):
         # Convert LLMArticle to RawArticle
         rawArticles = [
             convert_llm_article_to_raw_article(article) for article in response
@@ -83,12 +75,7 @@ async def run_single_relevant_literature_agent(
     )
     step_info.merge(other_step_info)
 
-    if (
-        articles is not None
-        and isinstance(articles, list)
-        and len(articles) > 0
-        and all(isinstance(article, RawArticle) for article in articles)
-    ):
+    if articles is not None and len(articles) > 0:
         new_papers = [
             Article(article=article, methods=None, problem_questions=None)
             for article in articles

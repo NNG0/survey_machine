@@ -57,7 +57,10 @@ def next_step(
 
     # The very first step is to run the relevant literature agent.
     # This is dependent on whether there are already key questions first created from the research question.
-    if status.key_questions is None or len(status.key_questions) == 0:
+    if (
+        status.key_questions is None
+        or len(status.key_questions) < status.settings.num_key_questions
+    ):
         return (
             "Creating key questions",
             run_single_create_key_questions_agent,
@@ -66,7 +69,7 @@ def next_step(
         )
     # Next, we need to find relevant literature.
     # This is dependent on whether there are already papers in the request status.
-    if not status.papers:
+    if not status.papers or len(status.papers) < status.settings.paper_limit:
         return (
             "Finding relevant literature",
             run_single_relevant_literature_agent,
@@ -76,7 +79,10 @@ def next_step(
 
     # Now we do have papers, but the information about their problem questions and methods is still missing.
     if any(
-        article.problem_questions is None or article.methods is None
+        article.problem_questions is None
+        or article.methods is None
+        or len(article.problem_questions) == 0
+        or len(article.methods) == 0
         for article in status.papers
     ):
         return (
@@ -90,7 +96,10 @@ def next_step(
     # We adjust the key questions to fit the papers better.
     # To mark this, each outputted paper of this step is assigned the paper it matches closely.
     # (key questions must at least contain one paper, because else it would have hit the CREATING_KEY_QUESTIONS part)
-    if any(question[1] is None for question in status.key_questions):
+    if any(
+        question[1] is None or len(question[1]) == 0
+        for question in status.key_questions
+    ):
         return (
             "Assigning papers to questions",
             run_single_adjust_questions_agent,
@@ -142,7 +151,7 @@ async def run_single_next_step(
         step_info.add_warning("No more steps to take.")
         return request_status, step_info  # No more steps to take.
 
-    name, single_step_fn, all_step_fn, _ = step
+    _name, single_step_fn, _all_step_fn, _ = step
     request_status, step_info = await single_step_fn(request_status)
 
     return request_status, step_info
@@ -162,7 +171,7 @@ async def run_single_stage(
     # DEBUG
     # print(f"Running step: {step[0]}")
 
-    name, single_step_fn, all_step_fn, _ = step
+    _name, _single_step_fn, all_step_fn, _ = step
     request_status, step_info = await all_step_fn(request_status)
 
     return request_status, step_info
@@ -181,7 +190,7 @@ async def run_until_before_stage(
         if step is None or step[3] == stage:
             break  # No more steps to take or we reached the specified stage.
 
-        name, single_step_fn, all_step_fn, _ = step
+        _name, _single_step_fn, all_step_fn, _ = step
         request_status, step_info2 = await all_step_fn(request_status)
         # Add the step info to the step information.
         step_info.merge(step_info2)

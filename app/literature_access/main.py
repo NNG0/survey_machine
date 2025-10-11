@@ -1,8 +1,12 @@
+import logging
 import os
+import traceback
 import httpx
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
 
+logger = logging.getLogger("literature_access")
+logging.basicConfig(level=logging.INFO)
 
 mcp = FastMCP("literature-access")
 
@@ -42,25 +46,39 @@ async def search_openalex(q: str):
     params = {"search": q, "per_page": 5}
 
     async with httpx.AsyncClient() as client:
+        # DEBUG
+        logger.info(
+            f"Searching OpenAlex with query: {q}; {client}"
+        )  # Might be a weird error with httpx client
         try:
             response = await client.get(OPEN_ALEX_BASE_URL, params=params)
             response.raise_for_status()
         except httpx.HTTPError as exc:
+            print(f"Error during OpenAlex search: {exc}", flush=True)
             return {"error": str(exc)}
 
-    # DEBUG
-    print("Response:", response)
-    data = response.json()
+        # DEBUG
+        data = response.json()
+        logger.debug(f"Raw content: {response.text}")
 
-    relevant_data = []
-    # Extract relevant information
-    for result in data.get("results", []):
-        relevant_data.append(await relevant_data_from_response(result))
+        relevant_data = []
+        # Extract relevant information
+        try:
+            for result in data.get("results", []):
+                relevant_data.append(await relevant_data_from_response(result))
+        except Exception as e:
+            logger.error(f"Error processing OpenAlex results: {e}")
+            logger.error(f"Context: {e.__context__}")
+            traceback_str = traceback.format_exc()
+            logger.error(f"Traceback: {traceback_str}")
+            logger.debug(f"Full data received: {data}")
+            logger.info(f"Data length: {len(data)}")
+            logger.info(f"Query was: {q}")
+            return {"error": str(e)}
 
-    # DEBUG
-    print("Relevant Data:", relevant_data)
-
-    return {"query": q, "results": relevant_data}
+        # DEBUG
+        logger.info(f"Relevant Data: {relevant_data}")
+        return {"query": q, "results": relevant_data}
 
 
 @mcp.tool()
@@ -81,7 +99,7 @@ async def get_openalex_by_id(id: str):
     return {"id": id, "results": data}
 
 
-async def relevant_data_from_response(data):
+async def relevant_data_from_response(data: dict) -> dict:
     # Extract relevant information from the OpenAlex API response
 
     # OpenAlex doesn't have the abstract because of legal reasons, so we'll fetch it from CrossRef if possible.
@@ -92,8 +110,14 @@ async def relevant_data_from_response(data):
         # This is in the format `https://doi.org/{doi}`
         doi = doi_as_url.split("https://doi.org/")[-1]
         abstract = await get_abstract_from_crossref(doi)
+        maybe_oa_location = data.get("best_oa_location", dict())
+        # If the oa location exists, get the pdf url.
+        pdf_url = ""
+        if maybe_oa_location and maybe_oa_location.get("pdf_url"):
+            pdf_url = maybe_oa_location.get("pdf_url")
     else:
         abstract = None
+        pdf_url = ""
     return {
         "id": data.get("id"),
         "title": data.get("title"),
@@ -112,7 +136,7 @@ async def relevant_data_from_response(data):
         "subfield": data.get("primary_topic", dict())
         .get("subfield", dict())
         .get("display_name", ""),
-        "pdf_url": data.get("best_oa_location", dict()).get("pdf_url", ""),
+        "pdf_url": pdf_url,
         # OpenAlex also has the concepts list, should we include that as well?
         # Same with referenced or related works.
     }

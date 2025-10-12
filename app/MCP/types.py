@@ -127,7 +127,7 @@ Request status:
         Draft:
                 {"\n\t\t".join([f"Title: {heading.title}\n\t\t\tContent: {heading.content}" for heading in self.draft])}
             """
-        )  # TODO: Add a better pretty print function
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Returns the status as a dictionary."""

@@ -6,3 +6,15 @@ mcp[cli]
 # API backend
 fastapi[standard]
 python-dotenv
+openai
+instructor
+# database
+sqlalchemy
+aiosqlite
+# OpenAI
+openai>=1.0.0
+# PDF parsing
+PyMuPDF>=1.23.0
+# Embeddings
+torch
+transformers

@@ -1,59 +1,217 @@
-# Frontend
+# Survey Machine Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.14.
+An Angular-based web application for intelligent literature research powered by AI.
 
-## Development server
+## 🏗️ Architecture Overview
 
-To start a local development server, run:
+The frontend is built using **Angular 19** with a standalone component architecture, utilizing reactive state management and service-based API communication.
 
-```bash
-ng serve
+### Technology Stack
+
+- **Framework**: Angular 19 (Standalone Components)
+- **Language**: TypeScript 5.7
+- **Styling**: CSS with component-scoped styles
+- **State Management**: Angular Signals + Custom Service Layer
+- **HTTP Client**: RxJS-based observables
+- **Markdown Rendering**: Marked.js
+- **Build Tool**: Angular CLI
+
+## 📂 Project Structure
+
+```
+src/
+├── app/
+│   ├── components/          # UI Components
+│   │   ├── header/          # Navigation header
+│   │   ├── footer/          # Page footer
+│   │   ├── hero/            # Search interface with filters
+│   │   ├── results/         # Paper search results display
+│   │   ├── topics/          # Topic navigation
+│   │   ├── collection/      # Saved papers collection
+│   │   ├── paper-card/      # Individual paper card component
+│   │   ├── drafts/          # Project/draft management
+│   │   ├── draft-detail/    # Detailed draft editor
+│   │   └── about/           # About page
+│   │
+│   ├── services/            # Business Logic Layer
+│   │   ├── state/           # State Management
+│   │   │   ├── app-state.service.ts    # Global app state
+│   │   │   ├── article.store.ts        # Article/paper store
+│   │   │   └── draft.store.ts          # Draft/project store
+│   │   ├── restapiservice.service.ts   # Main API communication
+│   │   ├── papers.service.ts           # Paper persistence
+│   │   └── projects.service.ts         # Project/draft operations
+│   │
+│   ├── types/               # TypeScript Definitions
+│   │   ├── models.ts        # Data models and interfaces
+│   │   └── state.ts         # State-related types
+│   │
+│   ├── app.component.ts     # Root component
+│   ├── app.config.ts        # App configuration
+│   └── app.routes.ts        # Routing configuration
+│
+├── index.html               # Main HTML entry point
+├── main.ts                  # Application bootstrap
+└── styles.css               # Global styles
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## 🔄 State Management
 
-## Code scaffolding
+The application uses a **hybrid state management approach**:
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### 1. **Signal-based State** (`AppStateService`)
+- Utilizes Angular Signals for reactive state updates
+- Manages workflow stages and request status
+- Tracks history of state changes
+- Handles workflow persistence
 
-```bash
-ng generate component component-name
+### 2. **Store Pattern** (`ArticleStore`, `DraftStore`)
+- Specialized stores for domain-specific operations
+- Handles CRUD operations on articles and drafts
+- Coordinates with backend API for persistence
+- Manages saved papers and draft content
+
+### State Flow
+```
+User Action → Component → Store/Service → API Call → State Update → UI Re-render
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 🔌 API Integration
+
+### Backend Communication
+The app communicates with a Python FastAPI backend through `RESTAPIService`:
+
+**Key Endpoints:**
+- **Literature Search**: `/api/search` - AI-powered paper discovery
+- **Workflow Management**: `/api/workflow` - State persistence
+- **Paper Storage**: `/api/papers` - Paper database operations
+- **Draft Management**: `/api/drafts` - Survey draft operations
+
+### Request Pipeline Stages
+The application follows a multi-stage workflow (`RequestStages`):
+
+1. `FINDING_LITERATURE` (100) - Search for relevant papers
+2. `PARSE_PAPERS` (200) - Extract paper content
+3. `CREATING_KEY_QUESTIONS` (50) - Generate research questions
+4. `ADJUST_KEY_QUESTIONS` (300) - Refine questions
+5. `EXTRACT_RELEVANT_RESULTS_FROM_PAPERS` (500) - Extract findings
+6. `CREATING_DRAFT_HEADINGS` (600) - Generate outline
+7. `FILLING_DRAFT_CONTENT` (700) - Fill content
+8. `FINISHED` (999) - Complete
+
+## 🎨 Key Components
+
+### Hero Component
+- **Purpose**: Main search interface
+- **Features**: 
+  - Query input with filters (year, citations, keywords)
+  - Advanced semantic search toggle
+  - Loading state management
+
+### Results Component
+- **Purpose**: Display search results
+- **Features**:
+  - Paper cards with relevance scores
+  - Save/unsave functionality
+  - Filter and sort capabilities
+
+### Collection Component
+- **Purpose**: Manage saved papers
+- **Features**:
+  - Persistent paper storage
+  - Remove/organize papers
+  - Export capabilities
+
+### Drafts Component
+- **Purpose**: Survey draft management
+- **Features**:
+  - Create/edit/delete drafts
+  - Markdown editor
+  - AI-assisted content generation
+
+## 🚀 Development
+
+### Prerequisites
+- Node.js 20+
+- npm or yarn
+- Docker (for containerized deployment)
+
+### Local Development
 
 ```bash
-ng generate --help
+# Install dependencies
+npm install
+
+# Start dev server
+npm start
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
 ```
 
-## Building
-
-To build the project run:
+### Docker Development
 
 ```bash
-ng build
+# Build and run with Docker Compose
+docker-compose up --build frontend
+
+# With hot reloading (requires volume mount)
+# Add to docker-compose.yml:
+volumes:
+  - ./app/frontend/src:/app/src
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 🔧 Configuration
 
-## Running unit tests
+### Angular Configuration
+- **Output Path**: `dist/`
+- **Port**: 4200
+- **Base HREF**: `/`
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### API Configuration
+Backend API URL is configured in the services layer (default: `http://localhost:8001`)
 
+## 📝 Key Features
+
+✅ **AI-Powered Literature Search** - Semantic search with relevance scoring  
+✅ **Advanced Filtering** - Year, citations, keywords, subject area  
+✅ **Paper Collection** - Save and organize research papers  
+✅ **Draft Management** - Create AI-assisted survey drafts  
+✅ **Workflow Persistence** - Resume research sessions  
+✅ **Markdown Support** - Rich text editing for drafts  
+✅ **Responsive Design** - Mobile-friendly interface  
+
+## 🔒 Security Considerations
+
+- No sensitive data stored in frontend
+- API calls use relative paths
+- CORS configured on backend
+- Input validation on forms
+
+## 📦 Build & Deployment
+
+### Production Build
 ```bash
-ng test
+npm run build
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
+### Docker Deployment
 ```bash
-ng e2e
+docker build -t survey-frontend .
+docker run -p 4200:4200 survey-frontend
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## 🐛 Debugging
 
-## Additional Resources
+- **Dev Tools**: Angular DevTools browser extension
+- **Console Logging**: Enabled in development mode
+- **RxJS Debugging**: Use `tap()` operators for stream inspection
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 📚 Further Documentation
+
+- [Angular Documentation](https://angular.dev)
+- [RxJS Documentation](https://rxjs.dev)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)

@@ -1,17 +1,14 @@
 <div class="hero">
   <h1>Intelligent Literature Research with AI</h1>
-  <p>Enter your research question or topic, and our AI will find the most relevant scientific publications for you.</p>
+  <p style="font-size: 22px;">① Enter your research question or topic, and our AI will find the most relevant scientific
+    publications for you.</p>
   <div class="search-container">
     <div class="search-bar">
-      <input 
-        type="text" 
-        [(ngModel)]="searchQuery" 
-        placeholder="Your survey question"
-        (keyup.enter)="onSearch()"
-      />
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Your survey question" (keyup.enter)="onSearch()" />
     </div>
 
-    <div class="filter-panel" *ngIf="showFilters">
+    <!-- The filters currently do nothing, so they aren't shown to reflect that -->
+    <!-- <div class="filter-panel" *ngIf="showFilters">
       <div class="filter-section">
         <h4>Publication Year</h4>
         <div class="year-range">
@@ -130,18 +127,19 @@
       <div class="filter-actions">
         <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
       </div>
-    </div>
+    </div> -->
 
     <div class="search-actions">
-      <button class="filter-toggle" (click)="toggleFilters()">
+      <!-- <button class="filter-toggle" (click)="toggleFilters()">
         <i class="fas fa-filter"></i> Filters
-      </button>
+      </button> -->
       <button class="search-btn" (click)="onSearch()">Search</button>
     </div>
   </div>
   <p class="examples">
-    Examples: 
-    <a href="#" (click)="$event.preventDefault(); searchQuery='Sustainable Energy Sources'; onSearch()">Sustainable Energy Sources</a>, 
+    Examples:
+    <a href="#" (click)="$event.preventDefault(); searchQuery='Sustainable Energy Sources'; onSearch()">Sustainable
+      Energy Sources</a>,
     <a href="#" (click)="$event.preventDefault(); searchQuery='AI in Medicine'; onSearch()">AI in Medicine</a>
   </p>
 </div>

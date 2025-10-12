@@ -1,0 +1,738 @@
+import os
+from typing import Any
+import uuid
+import time
+from datetime import datetime
+
+import dotenv
+import httpx
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
+from database.paper_manager import PaperManager
+from pdf_parsers.factory import get_pdf_parser
+
+from .steps import (
+    run_single_next_step,
+    run_single_stage,
+    run_until_before_stage,
+    next_step,
+)
+
+
+from .types import (
+    Article,
+    RawArticle,
+    RequestStages,
+    RequestStatus,
+    StepInformation,
+)
+
+from mcp_agent.app import MCPApp
+from mcp_agent.config import (
+    LoggerSettings,
+    Settings,
+    MCPSettings,
+    MCPServerSettings,
+    OpenAISettings,
+)
+
+from relevance.scibert_scorer import score_articles_async
+
+from .agents.relevant_literature import (
+    run_all_relevant_literature_agent,
+    run_single_relevant_literature_agent,
+)
+
+from .agents.adjust_key_questions import (
+    run_all_adjust_questions_agent,
+    run_single_adjust_questions_agent,
+)
+
+from .agents.create_key_questions import (
+    run_all_create_key_questions_agent,
+    run_single_create_key_questions_agent,
+)
+
+from .agents.extract_results import (
+    run_all_extract_results_agent,
+    run_single_extract_results_agent,
+)
+
+from .agents.parse_papers import (
+    run_all_parse_papers_agent,
+    run_single_parse_papers_agent,
+)
+
+# A simple server that runs the MCP agents.
+# Basically, it will support the `steps.py` file and the `agents` folder.
+
+literature_access_url = (
+    "http://localhost:8000/mcp"  # The URL of the literature access server
+)
+if os.getenv("AM_I_IN_DOCKER", "false") == "true":
+    literature_access_url = (
+        "http://literature-access:8000/mcp"  # Access over the shared network
+    )
+
+mcp_settings = MCPSettings(
+    servers={
+        "fetch": MCPServerSettings(
+            command="uvx",
+            args=["mcp-server-fetch"],
+        ),
+        "literature_access": MCPServerSettings(
+            transport="streamable_http",
+            url=literature_access_url,
+        ),
+    }
+)
+
+
+def get_openai_settings():
+    """Create OpenAI settings with a new AsyncClient for each request."""
+
+    print("Loading .env file for OpenAI settings...", flush=True)
+
+    dotenv.load_dotenv()
+    gwdg_api_key = os.getenv("GWDG_API_KEY")
+    base_url = os.getenv("OPENAI_URL")
+    default_model = os.getenv("DEFAULT_MODEL", "qwq-32b")
+
+    # Sets base_url to GWDG's hosted LLM API if GWDG_API_KEY is set
+    if gwdg_api_key:
+        base_url = "https://chat-ai.academiccloud.de/v1"
+        api_key = gwdg_api_key
+    else:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            # Only warn the user that the API key is being set to "ollama" automatically
+            print(
+                "Warning: OPENAI_API_KEY is not set, defaulting to 'ollama' as API key",
+                flush=True,
+            )
+
+    # Fall back to ollama if no base_url is set
+    if not base_url:
+        # Either to host.docker.internal (if in docker) or localhost (if not in docker)
+        print(
+            "Warning: OPENAI_URL is not set, defaulting to local ollama server (GWDG API key not set)",
+            flush=True,
+        )
+        is_in_docker = os.getenv("AM_I_IN_DOCKER", "false") == "true"
+        if is_in_docker:
+            base_url = "http://host.docker.internal:11434/v1"
+        else:
+            base_url = "http://127.0.0.1:11434/v1"
+
+    print(f"Using LLM provider at {base_url} with model {default_model}", flush=True)
+
+    # Do a quick ping to that address to make sure it works (without "/v1")
+    try:
+        response = httpx.get(f"{base_url[:-3]}")
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        print(f"Error pinging LLM provider: {e}, are you sure it is running?")
+
+    return OpenAISettings(
+        base_url=base_url,  # The selected ollama address
+        api_key=api_key,
+        http_client=httpx.AsyncClient(timeout=200.0),  # type: ignore (The library is weird and doesn't mention that this needs to be set.)
+        default_model=default_model,  # type: ignore
+    )
+
+
+logger = LoggerSettings(
+    # level="debug",
+    # level="info",
+    level="warning",  # Set to warning to avoid too much output
+)
+
+# time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running
+
+
+def create_mcp_app():
+    """Create a new MCPApp instance with properly initialized async client."""
+    return MCPApp(
+        name="hello_world_agent",
+        settings=Settings(
+            mcp=mcp_settings, openai=get_openai_settings(), logger=logger
+        ),
+        human_input_callback=None,
+    )
+
+
+async def recompute_relevance_scores(request_status: RequestStatus):
+    """Recompute SciBERT relevance scores for all papers."""
+
+    # DEBUG: time these operations
+    start_time = time.time()
+    if not request_status.papers:
+        return
+
+    research_question = (
+        getattr(request_status.settings, "research_question", "")
+        or "Academic research paper"
+    )
+    if not research_question:
+        return
+
+    try:
+        scores = await score_articles_async(research_question, request_status.papers)
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        print(f"Failed to compute relevance scores: {exc}")
+        return
+
+    for article, score in zip(request_status.papers, scores):
+        article.relevance_score = score
+
+    end_time = time.time()
+    print(
+        f"Recomputed relevance scores for {len(request_status.papers)} papers in {end_time - start_time:.2f} seconds"
+    )
+
+
+# with mcp_app.run() as mcp_agent_app:
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.post("/run_single_next_step")
+async def run_single_step(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run a single step in the request status."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single next step for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_next_step(request_status)
+        return request_status, step_info
+
+
+@app.post("/next_step")
+async def next_step_endpoint(
+    request_status: RequestStatus,
+) -> tuple[str, str, str, RequestStages] | None:
+    """This endpoint is a bit weirder because the python interface returns a tuple of the step name in human readable format, single step function, all steps function, and the stage.
+    But the functions are returned as Callables, so we need to return the names of the functions, or rather, the endpoints that are used to run the steps."""
+    step = next_step(request_status)
+    if step is None:
+        return None
+    single_fun_name = step[1].__name__  # The name of the single step function
+    all_fun_name = step[2].__name__  # The name of the all
+    return (
+        step[0],  # The name of the step
+        single_fun_name,  # The name of the single step function
+        all_fun_name,  # The name of the all steps function
+        step[3],  # The stage of the step
+    )
+
+
+@app.post("/run_single_stage")
+async def run_single_stage_endpoint(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run all steps in the request status for this single stage."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single stage for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_stage(request_status)
+        return request_status, step_info
+
+
+@app.post("/run_until_before_stage")
+async def run_until_before_stage_endpoint(
+    request_status: RequestStatus,
+    stage: RequestStages,  # The stage to run until before
+) -> tuple[RequestStatus, StepInformation]:
+    """Run all steps in the request status until the specified stage is reached."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running until before stage {stage} for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_until_before_stage(request_status, stage)
+        return request_status, step_info
+
+
+# Now, all individual agent steps are defined here.
+
+
+@app.post("/run_single_relevant_literature")
+async def run_single_relevant_literature(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single relevant literature agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single relevant literature for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_relevant_literature_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.post("/run_all_relevant_literature")
+async def run_all_relevant_literature(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all relevant literature agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all relevant literature for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_relevant_literature_agent(
+            request_status
+        )
+        await recompute_relevance_scores(request_status)
+        return request_status, step_info
+
+
+@app.post("/run_single_adjust_questions")
+async def run_single_adjust_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single adjust questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single adjust questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_adjust_questions_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.post("/run_all_adjust_questions")
+async def run_all_adjust_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all adjust questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all adjust questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_adjust_questions_agent(request_status)
+        return request_status, step_info
+
+
+@app.post("/run_single_create_key_questions")
+async def run_single_create_key_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single create key questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single create key questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_create_key_questions_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.post("/run_all_create_key_questions")
+async def run_all_create_key_questions(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all create key questions agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all create key questions for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_create_key_questions_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.post("/run_single_extract_results")
+async def run_single_extract_results(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single extract results agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single extract results for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_extract_results_agent(
+            request_status
+        )
+        return request_status, step_info
+
+
+@app.post("/run_all_extract_results")
+async def run_all_extract_results(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all extract results agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all extract results for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_extract_results_agent(request_status)
+        return request_status, step_info
+
+
+@app.post("/run_single_parse_papers")
+async def run_single_parse_papers(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the single parse papers agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running single parse papers for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_single_parse_papers_agent(request_status)
+        return request_status, step_info
+
+
+@app.post("/run_all_parse_papers")
+async def run_all_parse_papers(
+    request_status: RequestStatus,
+) -> tuple[RequestStatus, StepInformation]:
+    """Run the all parse papers agent."""
+    step_info = StepInformation()
+    mcp_app = create_mcp_app()
+    async with mcp_app.run() as mcp_agent_app:
+        mcp_agent_app.logger.info(
+            f"Running all parse papers for request: {request_status.settings.research_question}"
+        )
+        request_status, step_info = await run_all_parse_papers_agent(request_status)
+        return request_status, step_info
+
+
+# === WORKFLOW RESULTS STORAGE ===
+
+
+@app.post("/workflow_results")
+async def create_workflow_result(request_status: RequestStatus) -> dict[str, Any]:
+    """Persist a new workflow request status"""
+    try:
+        await recompute_relevance_scores(request_status)
+        paper_manager = PaperManager()
+        result_id = paper_manager.upsert_workflow_result(
+            None, request_status.model_dump()
+        )
+        return {
+            "success": True,
+            "workflow_id": result_id,
+            "request_status": request_status.model_dump(),
+        }
+    except Exception as e:
+        print(f"Create workflow error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save workflow: {str(e)}",
+        )
+
+
+@app.get("/workflow_results")
+async def get_workflow_results():
+    """Get all saved workflow results"""
+    try:
+        paper_manager = PaperManager()
+        results = paper_manager.get_all_workflow_results()
+        return results
+
+    except Exception as e:
+        print(f"Get workflow results error: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get workflow results: {str(e)}"
+        )
+
+
+@app.get("/workflow_results/latest")
+async def get_latest_workflow_result() -> dict[str, Any]:
+    try:
+        paper_manager = PaperManager()
+        result = paper_manager.get_latest_workflow_result()
+        if result is None:
+            return {"exists": False}
+        return {"exists": True, **result}
+    except Exception as e:
+        print(f"Get latest workflow result error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get workflow result: {str(e)}",
+        )
+
+
+@app.put("/workflow_results/{workflow_id}")
+async def update_workflow_result(
+    workflow_id: str, request_status: RequestStatus
+) -> dict[str, Any]:
+    try:
+        await recompute_relevance_scores(request_status)
+        paper_manager = PaperManager()
+        result_id = paper_manager.upsert_workflow_result(
+            workflow_id, request_status.model_dump()
+        )
+        return {
+            "success": True,
+            "workflow_id": result_id,
+            "request_status": request_status.model_dump(),
+        }
+    except Exception as e:
+        print(f"Update workflow error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update workflow: {str(e)}",
+        )
+
+
+@app.get("/workflow_results/{result_id}")
+async def get_workflow_result(result_id: str):
+    """Get specific workflow result"""
+    try:
+        paper_manager = PaperManager()
+        result = paper_manager.get_workflow_result(result_id)
+
+        if result:
+            return result
+        else:
+            raise HTTPException(status_code=404, detail="Workflow result not found")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get workflow result error: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get workflow result: {str(e)}"
+        )
+
+
+# === PAPER MANAGEMENT ===
+
+
+@app.post("/add_paper")
+async def add_paper(
+    title: str,
+    authors: str = "",
+    abstract: str = "",
+    url: str = "",
+    year: int | None = None,
+) -> dict[str, bool | int]:
+    try:
+        paper_manager = PaperManager()
+        paper_id = paper_manager.add_paper(
+            title=title, authors=authors, abstract=abstract, url=url, year=year
+        )
+        return {"success": True, "id": paper_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add paper: {str(e)}")
+
+
+@app.get("/papers")
+async def get_all_papers():
+    try:
+        paper_manager = PaperManager()
+        return paper_manager.get_all_papers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get papers: {str(e)}")
+
+
+# === WORKFLOW PDF UPLOAD ===
+
+
+@app.post("/upload_for_workflow")
+async def upload_for_workflow(
+    file: UploadFile = File(...),
+    request_status_json: str = Form(...),
+    workflow_id: str | None = Form(default=None),
+):
+    """Upload a PDF, parse it, and append the result to the given RequestStatus."""
+
+    try:
+        request_status = RequestStatus.model_validate_json(request_status_json)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+
+    try:
+        os.makedirs("uploads", exist_ok=True)
+        file_id = str(uuid.uuid4())
+        file_path = f"uploads/{file_id}_{file.filename}"
+
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        parser = get_pdf_parser()
+        parsed_data = await parser.parse_pdf(file_path)
+
+        parsed_title = (
+            parsed_data.get("title") or os.path.splitext(os.path.basename(file_path))[0]
+        )
+        parsed_authors = parsed_data.get("authors") or "Unknown"
+        parsed_abstract = parsed_data.get("abstract") or "No abstract"
+
+        article = Article(
+            article=RawArticle(
+                id=file_id,
+                title=parsed_title,
+                author=parsed_authors,
+                savedAt=datetime.utcnow().isoformat(),
+                abstract=parsed_abstract,
+                url=file_path,
+                doi=parsed_data.get("doi"),
+            ),
+            problem_questions=None,
+            methods=None,
+        )
+
+        request_status.papers.append(article)
+
+        # Run complete MCP workflow for PDF (skip all Literature stages)
+        try:
+            mcp_app = create_mcp_app()
+            async with mcp_app.run() as mcp_agent_app:
+                mcp_agent_app.logger.info(
+                    "Running complete MCP workflow for uploaded PDF"
+                )
+
+                # Run workflow steps until completion
+                step_count = 0
+                max_steps = 10  # Safety limit
+                executed_steps = []  # Debug: Track executed steps
+
+                # All stages that should be skipped for PDF uploads
+                literature_stages = {RequestStages.FINDING_LITERATURE}
+
+                while step_count < max_steps:
+                    next_step_info = next_step(request_status)
+                    if not next_step_info:
+                        break  # Workflow complete
+
+                    step_name, single_step_func, _, stage = next_step_info
+
+                    # Skip Literature-related stages for PDF-sourced papers
+                    if stage in literature_stages:
+                        mcp_agent_app.logger.info(
+                            f"Skipping {stage.name} for PDF upload"
+                        )
+                        executed_steps.append(
+                            f"SKIPPED: {step_name} (stage: {stage.name})"
+                        )
+                        step_count += 1
+                        continue
+
+                    # Store state before step to check for progress
+                    status_before = request_status.model_dump()
+
+                    mcp_agent_app.logger.info(
+                        f"Executing step {step_count + 1}: {step_name} (stage: {stage.name})"
+                    )
+                    executed_steps.append(
+                        f"EXECUTED: {step_name} (stage: {stage.name})"
+                    )
+
+                    request_status, step_info = await single_step_func(request_status)
+
+                    # Check if progress was made
+                    status_after = request_status.model_dump()
+                    if status_before == status_after:
+                        mcp_agent_app.logger.warning(
+                            f"No progress made in step: {step_name}"
+                        )
+                        executed_steps.append(
+                            f"NO_PROGRESS: {step_name} - breaking workflow"
+                        )
+                        break
+
+                    step_count += 1
+
+                await recompute_relevance_scores(request_status)
+                paper_manager = PaperManager()
+                workflow_id = paper_manager.upsert_workflow_result(
+                    workflow_id, request_status.model_dump()
+                )
+
+                return {
+                    "success": True,
+                    "workflow_id": workflow_id,
+                    "request_status": request_status.model_dump(),
+                    "message": "PDF uploaded and MCP workflow completed successfully",
+                    "steps_completed": step_count,
+                    "workflow_finished": next_step(request_status) is None,
+                    "executed_steps": executed_steps,
+                    "next_step_would_be": next_step(request_status)[0]
+                    if next_step(request_status)
+                    else None,
+                }
+
+        except Exception as workflow_error:
+            # If workflow fails, still return the uploaded paper
+            print(f"MCP workflow error: {workflow_error}")
+            await recompute_relevance_scores(request_status)
+            paper_manager = PaperManager()
+            workflow_id = paper_manager.upsert_workflow_result(
+                workflow_id, request_status.model_dump()
+            )
+            return {
+                "success": True,
+                "workflow_id": workflow_id,
+                "request_status": request_status.model_dump(),
+                "message": "PDF uploaded successfully, but workflow failed",
+                "error": str(workflow_error),
+            }
+
+    except Exception as e:
+        print(f"Upload error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+
+
+@app.post("/upload_paper_pdf/{paper_id}")
+async def upload_paper_pdf(paper_id: int, file: UploadFile = File(...)):
+    """Upload a PDF and attach it to an existing paper in the DB"""
+    try:
+        paper_manager = PaperManager()
+
+        temp_path = f"/tmp/{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        success = paper_manager.upload_paper_pdf(paper_id, temp_path, file.filename)
+
+        os.remove(temp_path)  # tmp cleanup
+
+        if success:
+            return {"success": True, "message": "PDF uploaded successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to upload PDF")
+
+    except Exception as e:
+        print(f"Upload PDF error: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

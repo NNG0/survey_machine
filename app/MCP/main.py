@@ -1,69 +1,10 @@
 import asyncio
-import time
-from typing import Awaitable, Callable, TypeVar
 
-import httpx
-
-from mcp_agent.app import MCPApp
-from mcp_agent.config import (
-    LoggerSettings,
-    Settings,
-    MCPSettings,
-    MCPServerSettings,
-    OpenAISettings,
-)
+import requests
 
 
-from MCP.agents.check_literature_relevance import run_check_literature_relevance_agent
-from MCP.agents.check_question_relevance import run_check_question_relevance_agent
-from MCP.agents.create_questions_from_article import (
-    run_create_questions_from_article_agent,
-)
-from MCP.agents.create_survey_question import run_create_survey_question_agent
-from MCP.agents.relevant_literature import run_relevant_literature_agent
+from .types import RequestStages, RequestStatus, StepInformation, StatusSetting
 
-from MCP.types import RequestStages, RequestStatus
-from MCP.steps import next_step, run_single_stage
-
-# The mcp_agent.config.yaml file is not working correctly for whatever reason, so instead, it's getting coded here.
-
-mcp_settings = MCPSettings(
-    servers={
-        "fetch": MCPServerSettings(
-            command="uvx",
-            args=["mcp-server-fetch"],
-        ),
-        "google_scholar": MCPServerSettings(
-            command="uvx",
-            args=["google-scholar-mcp-server"],
-        ),
-    }
-)
-
-openai_settings = OpenAISettings(
-    # base_url="http://10.89.0.3:11434/v1", # The ollama virtual machine
-    base_url="http://host.docker.internal:11434/v1",  # The local ollama server (native is faster on my machine)
-    api_key="ollama",
-    # The setting of the model using kwargs isn't documented, but it works.
-    # default_model="qwen3", # 8b Model
-    default_model="qwen3:0.6b",  # My memory isn't large enough for 8b, sorry :(
-    # default_model="llama3.2", # Trying out a non-reasoning model
-    http_client=httpx.Client(timeout=30.0),
-)
-
-logger = LoggerSettings(
-    # level="debug",
-    # level="info",
-    level="warning",  # Set to warning to avoid too much output
-)
-
-# time.sleep(500) # For debugging purposes, this is a long sleep to keep the container running
-
-app = MCPApp(
-    name="hello_world_agent",
-    settings=Settings(mcp=mcp_settings, openai=openai_settings, logger=logger),
-    human_input_callback=None,
-)
 
 # Drafting the structure:
 # Each agent is modeled as a function that takes in a request and returns a response.
@@ -88,178 +29,87 @@ app = MCPApp(
 # TODO: Do we use additional memory for the agents?
 
 
-# TODO: add the output agents
-
-
-T = TypeVar("T")
-
-
-async def try_run_agent(
-    agent_func: Callable[..., Awaitable[T]], num_tries=3, *args, **kwargs
-) -> T | None:
-    """This function tries to run an agent function a number of times and returns the result if successful.
-    If it fails, it returns None.
-    """
-    result = None
-    for i in range(num_tries):
-        try:
-            result = await agent_func(*args, **kwargs)
-        except Exception as e:
-            print(f"Error in try_run_agent: {e}")
-            time.sleep(1)
-        else:
-            break  # Breaking is a fucking exception in Python, so we need the try-except-else block; breaking inside the try block will not work.
-
-    return result
-
-
-paper_relevance_threshold = 0.5
-question_relevance_threshold = 0.5
-
-
-async def old_main_loop(research_question: str):
-    """This is the main loop of a request. It takes in the research question and does all the steps to create the survey."""
-
-    # Initializing the app
-    async with app.run() as mcp_agent_app:
-        logger = mcp_agent_app.logger
-        logger.info("Starting main loop")
-
-        # The state is an object of type RequestStatus.
-        status = RequestStatus(
-            research_question,
-            2,  # For testing, we limit the number of papers to 2.
-            trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt",
-        )  # The trace file is named with the current timestamp, so it is unique.
-
-        # First set the papers.
-        papers = await try_run_agent(
-            run_relevant_literature_agent,
-            research_question=research_question,
-            paper_limit=2,  # Just for testing, we limit the number of papers to 2.
-        )
-
-        if papers is None:
-            print("No relevant papers found, exiting.")
-            return None
-
-        status.papers = [
-            (paper, None) for paper in papers
-        ]  # The relevance score is not known yet, so we set it to None.
-
-        # Check their relevance
-        for paper in papers:
-            relevance = await try_run_agent(
-                run_check_literature_relevance_agent,
-                article=paper,
-                research_question=research_question,
-            )
-            if relevance is not None:
-                status.papers.append((paper, relevance))
-            else:
-                print(f"Error checking relevance of paper {paper.title}, skipping.")
-                continue
-
-        # Now we have a list of papers and their relevance scores. Let's filter them.
-        status.papers = [
-            paper
-            for paper in status.papers
-            if paper[1] is not None and paper[1] >= paper_relevance_threshold
-        ]  # Unscoreable papers are not included in the list.
-        if len(status.papers) == 0:
-            print("No relevant papers found, exiting.")
-            return None
-        print(f"Relevant papers: {status.papers}")
-
-        # Now we need to create the questions from the papers.
-
-        for paper in status.papers:
-            questions = await try_run_agent(
-                run_create_questions_from_article_agent,
-                article=paper[0],
-                research_question=research_question,
-            )
-            if questions is None:
-                print(
-                    f"Error creating questions from paper {paper[0].title}, skipping."
-                )
-                continue
-
-            # Check the relevance of the questions
-            for question in questions:
-                relevance = await try_run_agent(
-                    run_check_question_relevance_agent,
-                    question=question,
-                    research_question=research_question,
-                )
-                if relevance is not None:
-                    # The question still needs to be formatted, so we need to run the agent_create_survey_question function.
-                    formatted_question = await try_run_agent(
-                        run_create_survey_question_agent,
-                        question=question,
-                        research_question=research_question,
-                    )
-                    if formatted_question is None:
-                        print(f"Error formatting question {question}, skipping.")
-                        continue
-                    status.questions.append((formatted_question, relevance))
-                else:
-                    print(f"Error checking relevance of question {question}, skipping.")
-                    continue
-
-            # Now we have a list of questions and their relevance scores. Let's filter them.
-        status.questions = [
-            question
-            for question in status.questions
-            if question[1] is not None and question[1] > question_relevance_threshold
-        ]
-
-        # Done for now!
-        print(f"Relevant questions: {status.questions}")
-        return status
-
-
-async def main_loop(research_question: str):
+async def new_main_loop(research_question: str):
     """This is the main loop of a request. It takes in the research question and does all the steps to create the survey.
-    This time, it uses the stepping system to run the agents."""
+    This time, while it still uses the stepping system, it runs the agents on the hosted server."""
 
-    # Initializing the app
-    async with app.run() as mcp_agent_app:
-        logger = mcp_agent_app.logger
-        logger.info("Starting main loop")
+    settings = StatusSetting(
+        research_question=research_question,
+        paper_limit=10,
+        num_key_questions=5,
+    )
 
-        # The state is an object of type RequestStatus.
-        status = RequestStatus(
-            research_question,
-            2,  # For testing, we limit the number of papers to 2.
-            trace_file="MCP/traces/request-" + str(int(time.time())) + ".txt",
-        )  # The trace file is named with the current timestamp, so it is unique.
+    status = RequestStatus(
+        settings=settings,  # Testing setup
+        papers=[],  # Start with an empty list of papers
+        key_questions=[],  # Start with an empty list of key questions
+        draft=[],  # Also don't use drafts out of the box
+    )  # The trace file is named with the current timestamp, so it is unique.
 
-        stage = next_step(status)
-        while stage is not None and stage[3] != RequestStages.FINISHED:
-            print(
-                stage[0]
-            )  # The first element is a human-readable string describing the step.
-            # Run a single stage of the request.
-            status, step_info = await run_single_stage(status)
-            logger.debug(f"Finished stage: {stage[3]}")
-            logger.debug(f"Current status: {status}")
-            step_info.print_warnings_and_errors()
-            # DEBUG
-            print(f"Current status: {status}")
+    # print(f"Initial status: {status.to_dict()}")
 
-            # Lastly, update the stage to the next step.
-            stage = next_step(status)
+    stage = requests.post(
+        "http://localhost:8001/next_step",
+        json=status.to_dict(),
+    )
+    while (
+        stage.status_code == 200  # All responses should be 200 OK
+        and stage.json()  # The json should be valid
+        and stage.json()[3]
+        != RequestStages.FINISHED  # And the request should not be finished
+    ):
+        response = stage.json()
+        print(response[0])  # Print the human-readable message:
+        r = requests.post(
+            "http://localhost:8001/run_single_next_step",  # Try to run the next step
+            json=status.to_dict(),
+            headers={"Content-Type": "application/json"},
+        )
+        if r.status_code != 200:
+            print(f"Error: {r.status_code} - {r.text}")
+            return
+        response = r.json()
 
-            # We could also run a single step instead.
+        # Debug?
+        # print(f"Response: {response}")
 
-        # Result:
-        print(f"Relevant questions: {status.questions}")
-        if stage is None or stage[3] == RequestStages.FINISHED:
-            print("All stages finished successfully.")
-        else:
-            print(f"Last stage: {stage[3]}")
+        status = RequestStatus(**response[0])
+        step_info = StepInformation(**response[1])
+
+        print("Current status:")
+        status.pretty_print()  # Print the current status
+        step_info.print_warnings_and_errors()
+
+        # If a rate limit was hit, wait for one minute.
+        if step_info.errors and any(
+            "Rate limit" in error for error in step_info.errors
+        ):
+            print("Rate limit hit, waiting for one minute...")
+            await asyncio.sleep(60)
+
+        # Get the next step
+        stage = requests.post(
+            "http://localhost:8001/next_step",
+            json=status.to_dict(),
+        )
 
 
 if __name__ == "__main__":
-    asyncio.run(main_loop("What is the impact of social media on mental health?"))
+    import sys
+
+    # print(sys.argv)
+    # For now, we can start the server if no arguments are given.
+    if len(sys.argv) <= 1:
+        print("In order to start the server, please use 'fastapi run MCP/server.py'.")
+        exit()
+    else:
+        # Else, we expect that something happened, for example, a test run.
+        if sys.argv[-1] == "test":
+            print("Running test loop.")
+            asyncio.run(
+                new_main_loop(
+                    "Which sorting algorithms are used in practice, from standard libraries to personal projects?"
+                )
+            )
+        else:
+            print("Unknown argument. Please use 'test' to run the test loop.")

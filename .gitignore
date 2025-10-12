@@ -2,6 +2,9 @@
 
 .vscode/*
 .idea/*
+**__pycache__**
+.DS_Store
+
 
 # Symlink to the ollama folder on the host machine
 .ollama
@@ -9,3 +12,14 @@
 .env
 
 
+docker-data/** 
+
+app/MCP/mcp_agent.secrets.yaml
+
+# Docker / DB / Cache
+docker-data/
+*.db
+*.lock
+*.safetensors
+*.json
+*.jinja

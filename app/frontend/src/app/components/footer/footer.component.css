@@ -3,15 +3,12 @@
   color: white;
   padding: 40px;
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: center;
   margin-top: auto;
 }
 
 .footer-section {
-  flex: 1;
-  min-width: 200px;
-  margin: 0 20px;
+  text-align: center;
 }
 
 .footer-section h4 {

@@ -1,0 +1,107 @@
+<div class="collection-container">
+  <div class="collection-header">
+    <h2><i class="fas fa-bookmark"></i> My Collection</h2>
+    <p class="subtitle">③ Manage your saved papers, upload PDFs, and start drafting a new project.</p>
+  </div>
+
+  <div class="collection-actions">
+    <input id="fileUpload" type="file" (change)="onFileSelected($event)" hidden />
+    <label for="fileUpload" class="btn upload-btn">
+      <i class="fas fa-upload"></i> Upload file
+    </label>
+
+    <button class="btn draft-btn" (click)="startDrafting()">
+      <i class="fas fa-pen"></i> Start drafting
+    </button>
+  </div>
+
+  <div class="collection-content" *ngIf="appState.currentStep.saved_papers.length > 0; else emptyState">
+    <div class="list-toolbar">
+      <!--
+      <div class="sort-controls">
+        <label for="sortSelect">Sort by:</label>
+        <select id="sortSelect" [(ngModel)]="sortOrder">
+          <option value="dateDesc">Date (newest first)</option>
+          <option value="dateAsc">Date (oldest first)</option>
+          <option value="alphabetical">Alphabetical</option>
+        </select>
+      </div>
+      -->
+      <button class="remove-all-btn" (click)="removeAllPapers()" title="Delete all papers">
+        <i class="fas fa-trash"></i> Delete all
+      </button>
+    </div>
+    @for (paper of appState.currentStep.status.papers; track paper.article.id) {
+    <app-paper-card [paper]="paper" mode="saved"></app-paper-card>
+    }
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <i class="fas fa-bookmark fa-3x"></i>
+      <h3>No saved papers yet</h3>
+      <p>Click on "Save" for interesting papers to collect them here.</p>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Research Question Modal -->
+<div class="modal-backdrop" *ngIf="showRQModal" (click)="closeRQModal()"></div>
+<div class="modal" *ngIf="showRQModal">
+  <div class="modal-header">
+    <h3>Research Question Required</h3>
+    <button class="close-btn" (click)="closeRQModal()">×</button>
+  </div>
+  <div class="modal-body">
+    <p>To calculate relevance scores for your PDF, please enter your research question:</p>
+    <div class="rq-list">
+      <div class="rq-item">
+        <label>Research question</label>
+        <div class="rq-row">
+          <input type="text" [(ngModel)]="researchQuestions[0]"
+                 placeholder="Enter your research question here..."
+                 (keyup.enter)="submitRQAndUpload()" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn draft-btn" (click)="submitRQAndUpload()">
+      <i class="fas fa-upload"></i> Upload PDF
+    </button>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showDraftModal" (click)="closeDraftModal()"></div>
+<div class="modal" *ngIf="showDraftModal">
+  <div class="modal-header">
+    <h3>Start drafting</h3>
+    <button class="close-btn" (click)="closeDraftModal()">×</button>
+  </div>
+  <div class="modal-body">
+    <p>④ Please enter your research question and optionally key questions and start drafting a new project:</p>
+    <div class="rq-list">
+      <div class="rq-item" *ngFor="let rq of researchQuestions; let i = index; trackBy: trackByIndex">
+        <label *ngIf="i === 0">Research question</label>
+        <label *ngIf="i > 0">Key question {{ i }}</label>
+        <div class="rq-row">
+          <input type="text" [(ngModel)]="researchQuestions[i]" placeholder="Type here" />
+          <button class="rq-remove" *ngIf="i > 0" (click)="removeResearchQuestion(i)" title="Remove">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="rq-actions">
+      <button class="btn add-btn" (click)="addResearchQuestion()" [disabled]="researchQuestions.length >= 5">
+        <i class="fas fa-plus"></i> Add another question
+      </button>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn draft-btn" (click)="submitDraft()">
+      <i class="fas fa-pen"></i> Start Project
+    </button>
+  </div>
+
+</div>
